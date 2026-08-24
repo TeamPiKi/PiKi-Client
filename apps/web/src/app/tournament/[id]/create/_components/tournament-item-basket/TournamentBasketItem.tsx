@@ -32,7 +32,13 @@ function TournamentBasketItem({ item, index, participantImageMap }: TournamentBa
           className="absolute -right-1 -bottom-0.5 overflow-hidden rounded-full border-2 border-white"
           style={{ width: '35%', height: '35%', zIndex: Z_INDEX.BASE_IMAGE + 10 }}
         >
-          <Image src={friendImageUrl} alt="친구 프로필" fill className="object-cover" />
+          <Image
+            src={friendImageUrl}
+            alt="친구 프로필"
+            fill
+            sizes="30px"
+            className="object-cover"
+          />
         </div>
       )}
     </div>
