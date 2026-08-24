@@ -25,12 +25,11 @@ function ItemDetailView({ item, memo, priceRefresh, onEdit }: ItemDetailViewProp
           src={item.imageUrl}
           alt="상품 이미지"
           fill
+          preload
           sizes={ITEM_IMAGE_SIZES}
           className="object-cover"
         />
-        {item.sourceUrl && (
-          <ItemLinkBanner sourceUrl={item.sourceUrl} />
-        )}
+        {item.sourceUrl && <ItemLinkBanner sourceUrl={item.sourceUrl} />}
       </div>
 
       <Spacing size={12} />
