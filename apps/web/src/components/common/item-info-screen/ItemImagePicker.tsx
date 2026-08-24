@@ -8,6 +8,8 @@ import { ImageIconFill } from '@/assets/icons';
 import { useImagePicker } from '@/hooks/useImagePicker';
 import { cn } from '@/utils/cn';
 
+import { ITEM_IMAGE_SIZES } from './itemInfoScreen.const';
+
 type ItemImagePickerProps = {
   imageUrl: string | null;
   onImageSelect?: (file: File) => void;
@@ -59,7 +61,7 @@ function ItemImagePicker({ imageUrl, onImageSelect, className }: ItemImagePicker
             src={displayUrl}
             alt="상품 이미지"
             fill
-            sizes="440px"
+            sizes={ITEM_IMAGE_SIZES}
             className="object-cover"
             unoptimized={previewUrl !== null}
           />
