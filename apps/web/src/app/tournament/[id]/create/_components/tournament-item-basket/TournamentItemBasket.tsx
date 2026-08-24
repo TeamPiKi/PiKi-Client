@@ -65,7 +65,7 @@ function TournamentItemBasket({
         src={basketImg}
         alt={`장바구니 ${basketIndex + 1}`}
         fill
-        sizes="(max-width: 480px) 100vw, 480px"
+        sizes="(max-width: 480px) 80vw, 384px"
         className="object-contain"
       />
       <div className="absolute inset-0 flex items-start justify-center">
