@@ -40,3 +40,8 @@ export const getApiErrorStatus = (error: unknown): number | null =>
 
 export const getApiErrorCode = (error: unknown): ApiErrorCodeT | null =>
   isAxiosError<ApiErrorResponseT>(error) ? (error.response?.data?.code ?? null) : null;
+
+export const getApiErrorData = <T>(error: unknown): T | null =>
+  isAxiosError<ApiErrorResponseT<T | null>>(error)
+    ? (error.response?.data?.data ?? null)
+    : null;

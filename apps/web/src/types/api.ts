@@ -13,7 +13,7 @@ export type ApiResponseT<T> = {
 };
 
 // 공통 에러 응답 타입
-export type ApiErrorResponseT = {
-  data: null;
+export type ApiErrorResponseT<T = null> = {
+  data: T;
   code: ApiErrorCodeT;
 };
