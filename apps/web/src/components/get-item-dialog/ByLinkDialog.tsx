@@ -1,5 +1,6 @@
 'use client';
 
+import { ERROR_CODE } from '@piki/core';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -10,6 +11,7 @@ import Input from '@/components/input';
 import { usePostTournamentItemLink } from '@/hooks/usePostTournamentItemLink';
 import { usePostWishLink } from '@/hooks/usePostWishLink';
 import type { ItemTypeT } from '@/types/item';
+import { getApiErrorCode } from '@/utils/apiError';
 import { URL_PATTERN, extractUrlFromText } from '@/utils/extractUrl';
 
 type ByLinkProps = {
@@ -60,6 +62,13 @@ function ByLinkDialog({ type, open, onOpenChange }: ByLinkProps) {
       onSuccess: () => {
         onOpenChange(false);
         resetState();
+      },
+      onError: (error: Error) => {
+        /** 중복 위시 등록인 경우 다이얼로그 닫음 */
+        if (getApiErrorCode(error) === ERROR_CODE.WISH_ALREADY_EXISTS) {
+          onOpenChange(false);
+          resetState();
+        }
       },
     };
 

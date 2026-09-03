@@ -131,13 +131,13 @@
 - 400 / 403: ⚠️ 개별 처리 없음 — suspense query throw → error boundary
 - 401: ✅ 전역 인터셉터
 
-### POST /api/v1/wishlists (URL 등록) · 201, 400, 401, 403
+### POST /api/v1/wishlists (URL 등록) · 201, 400, 401, 403, 409
 
 - 201: ✅ analytics + `['wishlists']` invalidate + archive 이동
 - 400: ✅ 카탈로그 문구 토스트 (`LINK-001~003`)
 - 401: ✅ 전역 인터셉터
 - 403: ✅ 토스트 + (게스트) 로그인 페이지 replace — 이미지 등록과 동일 동선
-- 409: ✅ 토스트 (`WISH-009` 중복 상품) / `USER-003` 은 인터셉터가 세션 정리
+- 409: ✅ `WISH-009`(중복 상품)는 응답 `data.wishId` 로 "보러가기" 액션 토스트 → 위시 상세 이동 (`wishId` 가 없으면 문구만). 링크 다이얼로그는 인라인 대신 닫는다 / `USER-003` 은 인터셉터가 세션 정리
 
 ### DELETE /api/v1/wishlists (다건 삭제) · 200, 400, 401, 403
 

@@ -1,0 +1,1 @@
+export const TOAST_ACTION_DURATION_MS = 5000;

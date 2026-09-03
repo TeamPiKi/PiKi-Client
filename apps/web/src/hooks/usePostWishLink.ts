@@ -1,12 +1,19 @@
+import { ERROR_CODE } from '@piki/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { postWishLink } from '@/apis/postWishLink';
+import { TOAST_ACTION_DURATION_MS } from '@/components/toast/toast.const';
 import { ANALYTICS_EVENT } from '@/consts/analytics';
 import { ROUTES } from '@/consts/route';
 import { logAnalyticsEvent } from '@/utils/analytics';
-import { getApiErrorStatus, isGlobalNetError } from '@/utils/apiError';
+import {
+  getApiErrorCode,
+  getApiErrorData,
+  getApiErrorStatus,
+  isGlobalNetError,
+} from '@/utils/apiError';
 import { getApiErrorMessage } from '@/utils/getApiErrorMessage';
 import { getLoginPath } from '@/utils/loginRedirect';
 
@@ -36,10 +43,27 @@ export const usePostWishLink = ({ onErrorMessage }: UsePostWishLinkOptionsT = {}
     onError: error => {
       if (isGlobalNetError(error)) return;
 
+      if (getApiErrorCode(error) === ERROR_CODE.WISH_ALREADY_EXISTS) {
+        const existingWish = getApiErrorData<{ wishId: number }>(error);
+
+        if (typeof existingWish?.wishId === 'number') {
+          toast.error(getApiErrorMessage(error), {
+            duration: TOAST_ACTION_DURATION_MS,
+            action: {
+              label: '보러가기',
+              onClick: () => router.push(ROUTES.WISH_EDIT(existingWish.wishId)),
+            },
+          });
+          return;
+        }
+
+        toast.error(getApiErrorMessage(error));
+        return;
+      }
+
       /**
        * 400: 링크 형식 오류·미지원 쇼핑몰
        * 403: 게스트인 경우
-       * 409: 이미 등록된 상품
        */
       showErrorMessage(getApiErrorMessage(error));
 
