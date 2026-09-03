@@ -10,9 +10,7 @@ import Input from '@/components/input';
 import { usePostTournamentItemLink } from '@/hooks/usePostTournamentItemLink';
 import { usePostWishLink } from '@/hooks/usePostWishLink';
 import type { ItemTypeT } from '@/types/item';
-import { isGlobalNetError } from '@/utils/apiError';
 import { URL_PATTERN, extractUrlFromText } from '@/utils/extractUrl';
-import { getApiErrorMessage } from '@/utils/getApiErrorMessage';
 
 type ByLinkProps = {
   type: ItemTypeT;
@@ -23,14 +21,14 @@ type ByLinkProps = {
 function ByLinkDialog({ type, open, onOpenChange }: ByLinkProps) {
   const { id: tournamentId } = useParams<{ id: string }>();
 
-  const { postWishLinkMutation, isPostWishLinkPending } = usePostWishLink({
-    showErrorToast: false,
-  });
-  const { postTournamentItemLinkMutation, isPostTournamentItemLinkPending } =
-    usePostTournamentItemLink(Number(tournamentId), { showErrorToast: false });
-
   const [url, setUrl] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { postWishLinkMutation, isPostWishLinkPending } = usePostWishLink({
+    onErrorMessage: setErrorMessage,
+  });
+  const { postTournamentItemLinkMutation, isPostTournamentItemLinkPending } =
+    usePostTournamentItemLink(Number(tournamentId), { onErrorMessage: setErrorMessage });
 
   const trimmedUrl = url.trim();
   const isEmpty = trimmedUrl.length === 0;
@@ -58,16 +56,10 @@ function ByLinkDialog({ type, open, onOpenChange }: ByLinkProps) {
       return;
     }
 
-    /** 닫기/초기화는 성공 시에만 — 실패 시 URL을 고칠 수 있게 유지. 위시리스트 이동은 usePostWishLink 훅이 조건부로 처리 */
     const mutationOptions = {
       onSuccess: () => {
         onOpenChange(false);
         resetState();
-      },
-      /** 5xx·네트워크는 전역 토스트가 안내 — 인라인까지 겹치지 않게 4xx만 표시 */
-      onError: (error: Error) => {
-        if (isGlobalNetError(error)) return;
-        setErrorMessage(getApiErrorMessage(error));
       },
     };
 
