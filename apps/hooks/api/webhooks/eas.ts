@@ -1,7 +1,7 @@
 import { escapeMarkdown, sendDiscordMessage } from '../../lib/discord.js';
 import { getEasBuildInfo } from '../../lib/eas.js';
 import type { ReleaseUpdateT } from '../../lib/release.js';
-import { PROFILE_LABEL, updateReleaseThread } from '../../lib/release.js';
+import { PROFILE_LABEL, buildTag, updateReleaseThread } from '../../lib/release.js';
 import { verifySignature } from '../../lib/verify.js';
 
 type EasSubmitPayloadT = {
@@ -41,23 +41,30 @@ export async function POST(request: Request) {
 
   const buildInfo = payload.turtleBuildId ? await getEasBuildInfo(payload.turtleBuildId) : null;
   const profile = buildInfo?.buildProfile ?? '';
-  const label = PROFILE_LABEL[profile] ?? '제출';
+  const label = PROFILE_LABEL[profile] ?? '';
+
+  /** iOS TestFlight 업로드 성공은 알리지 않는다 — 뒤따르는 ASC "처리 완료" 가 같은 얘기를 더 정확히 한다 */
+  if (payload.platform === 'ios' && payload.status === 'finished' && profile === 'production-dev') {
+    return Response.json({ ok: true, skipped: 'testflight-upload' });
+  }
   const versionText = buildInfo?.appVersion
     ? ` v${buildInfo.appVersion}${buildInfo.appBuildVersion ? ` (${buildInfo.appBuildVersion})` : ''}`
     : '';
 
+  const tag = buildTag(buildInfo?.appBuildVersion);
+  /** 라벨·버전은 모를 수 있다 (EXPO_TOKEN 없음 등) — 빈 조각은 걸러 공백이 겹치지 않게 한다 */
+  const subject = [label, versionText.trim()].filter(Boolean).join(' ');
+
   const logLines: string[] = [];
   let lineValue: string;
   if (payload.status === 'finished') {
-    lineValue = profile === 'production' ? '심사 제출 완료' : 'TestFlight 업로드 완료 — 처리 대기';
-    logLines.push(
-      profile === 'production'
-        ? `✅ ${label}${versionText} 심사 제출 완료`
-        : `✅ ${label}${versionText} TestFlight 업로드 완료`
-    );
+    /** 프로필을 모르면 심사인지 TestFlight 인지 단정할 수 없어 중립 문구로 남긴다 */
+    const doneText = profile === 'production' ? '심사 제출 완료' : '제출 완료';
+    lineValue = `${tag}${doneText}`;
+    logLines.push(['✅', subject, doneText].filter(Boolean).join(' '));
   } else {
-    lineValue = '제출 실패';
-    logLines.push(`❌ ${label}${versionText} 스토어 제출 실패`);
+    lineValue = `${tag}제출 실패`;
+    logLines.push(['❌', subject, '스토어 제출 실패'].filter(Boolean).join(' '));
     const errorMessage = payload.submissionInfo?.error?.message;
     if (errorMessage) logLines.push(`• 원인: ${escapeMarkdown(errorMessage)}`);
   }

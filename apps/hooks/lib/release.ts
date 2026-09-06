@@ -1,4 +1,5 @@
 import {
+  archiveThread,
   editChannelMessage,
   ensureThreadOnMessage,
   listRecentMessages,
@@ -11,13 +12,18 @@ const OPEN_PREFIX = '📦 [iOS] PiKi';
 const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export const PROFILE_LABEL: Record<string, string> = {
-  production: '심사용 (production)',
-  'production-dev': '팀 테스트용 (production-dev)',
+  production: '심사용',
+  'production-dev': '팀 테스트용',
 };
 
+/** 상태판 줄에 남기는 빌드 번호 — 빌드 식별 정보가 없는 ASC 이벤트가 되짚는 유일한 단서 */
+export const buildTag = (buildVersion?: string | null) => (buildVersion ? `빌드 ${buildVersion} ` : '');
+
+export type RootStateT = { title: string; lines: string[] };
+
 export type ReleaseUpdateT = {
-  /** 스레드에 남길 로그 */
-  log: string;
+  /** 스레드에 남길 로그 — 함수면 갱신 전 상태판 기반으로 계산 */
+  log: string | ((root: RootStateT) => string);
   /** 루트 상태판에서 갱신할 줄 — 함수면 기존 값 기반으로 계산 (카운터 등) */
   line?: { key: string; value: string | ((prev: string | null) => string) };
   /** 알게 된 시점에 제목·스레드명에 1회 채워지는 버전 */
@@ -46,6 +52,8 @@ export const updateReleaseThread = async (update: ReleaseUpdateT) => {
   await ensureThreadOnMessage(root.id, `iOS${versionSuffix} 배포`);
 
   const [title = '', ...lines] = root.content.split('\n');
+  const log = typeof update.log === 'function' ? update.log({ title, lines }) : update.log;
+
   let nextTitle = title;
   if (update.final) {
     const version = / v[\d.]+/.exec(nextTitle)?.[0] ?? '';
@@ -63,5 +71,15 @@ export const updateReleaseThread = async (update: ReleaseUpdateT) => {
   }
 
   await editChannelMessage(root.id, [nextTitle, ...lines].join('\n'));
-  await postThreadMessage(root.id, update.log);
+  /** 빈 로그는 상태판만 갱신하라는 뜻 (중복 알림 억제) */
+  if (log) await postThreadMessage(root.id, log);
+  /** 사이클이 끝났으면 스레드를 닫는다 — 글을 올린 뒤여야 다시 열리지 않는다 */
+  if (update.final) {
+    try {
+      await archiveThread(root.id);
+    } catch (error) {
+      /** 닫기 실패로 502 를 내면 재시도가 붙어 메시지가 중복된다 — 로그는 이미 남았으니 삼킨다 */
+      console.error('스레드 닫기 실패:', error);
+    }
+  }
 };
