@@ -1,3 +1,4 @@
+import type { RootStateT } from '../../lib/release.js';
 import { updateReleaseThread } from '../../lib/release.js';
 import { verifySignature } from '../../lib/verify.js';
 
@@ -5,9 +6,7 @@ type AscWebhookPayloadT = {
   data?: {
     type?: string;
     attributes?: {
-      oldState?: string;
       newState?: string;
-      oldValue?: string;
       newValue?: string;
     };
   };
@@ -19,9 +18,8 @@ type VersionStateT = {
   final?: { emoji: string; text: string };
 };
 
-/** 심사 대기·통과·출시·반려만 기록 — 수동/자동 출시는 통과 후 전이로 드러난다 */
+/** 심사 통과·출시·반려만 기록 — 수동/자동 출시는 통과 후 전이로 드러난다 */
 const VERSION_STATE: Record<string, VersionStateT> = {
-  WAITING_FOR_REVIEW: { status: '📮 대기 중', log: '📮 심사 대기 중' },
   ACCEPTED: { status: '✅ 통과', log: '✅ 심사 통과' },
   PENDING_DEVELOPER_RELEASE: {
     status: '✅ 통과 — 수동 출시 대기',
@@ -44,6 +42,17 @@ const VERSION_STATE: Record<string, VersionStateT> = {
     log: '❌ 심사 반려 (메타데이터)',
     final: { emoji: '❌', text: '심사 반려' },
   },
+};
+
+/** ASC 페이로드에는 빌드 식별 정보가 없어, 상태판에 남은 이 사이클의 빌드 번호로 되짚는다 */
+const testFlightBuild = ({ title, lines }: RootStateT) => {
+  const version = /v[\d.]+/.exec(title)?.[0] ?? '';
+  const builds = [
+    ...new Set(lines.flatMap(line => (line.match(/빌드 \d+/g) ?? []).map(tag => tag.slice(3)))),
+  ];
+  const buildText = builds.length > 1 ? `빌드 ${builds.join('·')} 중 1건` : (builds[0] && `빌드 ${builds[0]}`);
+  const detail = [version, buildText].filter(Boolean).join(' ');
+  return detail ? ` — ${detail}` : '';
 };
 
 /** App Store Connect 웹훅 — TestFlight 빌드 처리·심사 상태 전이를 배포 스레드에 기록 */
@@ -70,24 +79,22 @@ export async function POST(request: Request) {
   const attributes = payload.data?.attributes ?? {};
   /** 이벤트별로 attributes 키가 다르다 (build: newState, version: newValue) */
   const newState = attributes.newState ?? attributes.newValue ?? '';
-  const oldState = attributes.oldState ?? attributes.oldValue ?? '';
 
   let update: Parameters<typeof updateReleaseThread>[0] | null = null;
   if (eventType === 'buildUploadStateUpdated') {
     if (newState === 'COMPLETE') {
       update = {
-        log: '✅ TestFlight 빌드 처리 완료 — 테스트 배포 가능',
-        /** ASC 페이로드로는 어느 빌드인지 알 수 없어 건수로 집계한다 */
+        log: root => `✅ TestFlight 처리 완료${testFlightBuild(root)} · 테스트 배포 가능`,
         line: { key: 'TestFlight 처리', value: prev => `${(parseInt(prev ?? '', 10) || 0) + 1}건 완료` },
       };
     } else if (newState === 'FAILED') {
-      update = { log: '❌ TestFlight 빌드 처리 실패' };
+      update = { log: root => `❌ TestFlight 처리 실패${testFlightBuild(root)}` };
     }
   } else if (eventType === 'appStoreVersionAppVersionStateUpdated') {
     const state = VERSION_STATE[newState];
     if (state) {
       update = {
-        log: oldState ? `${state.log}\n• 상태: \`${oldState}\` → \`${newState}\`` : state.log,
+        log: state.log,
         line: { key: '심사', value: state.status },
         final: state.final,
       };

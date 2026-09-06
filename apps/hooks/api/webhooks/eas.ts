@@ -1,7 +1,7 @@
 import { escapeMarkdown, sendDiscordMessage } from '../../lib/discord.js';
 import { getEasBuildInfo } from '../../lib/eas.js';
 import type { ReleaseUpdateT } from '../../lib/release.js';
-import { PROFILE_LABEL, updateReleaseThread } from '../../lib/release.js';
+import { PROFILE_LABEL, buildTag, updateReleaseThread } from '../../lib/release.js';
 import { verifySignature } from '../../lib/verify.js';
 
 type EasSubmitPayloadT = {
@@ -46,17 +46,20 @@ export async function POST(request: Request) {
     ? ` v${buildInfo.appVersion}${buildInfo.appBuildVersion ? ` (${buildInfo.appBuildVersion})` : ''}`
     : '';
 
+  const tag = buildTag(buildInfo?.appBuildVersion);
+
   const logLines: string[] = [];
   let lineValue: string;
   if (payload.status === 'finished') {
-    lineValue = profile === 'production' ? '심사 제출 완료' : 'TestFlight 업로드 완료 — 처리 대기';
+    lineValue =
+      profile === 'production' ? `${tag}심사 제출 완료` : `${tag}TestFlight 업로드 완료 — 처리 대기`;
     logLines.push(
       profile === 'production'
         ? `✅ ${label}${versionText} 심사 제출 완료`
         : `✅ ${label}${versionText} TestFlight 업로드 완료`
     );
   } else {
-    lineValue = '제출 실패';
+    lineValue = `${tag}제출 실패`;
     logLines.push(`❌ ${label}${versionText} 스토어 제출 실패`);
     const errorMessage = payload.submissionInfo?.error?.message;
     if (errorMessage) logLines.push(`• 원인: ${escapeMarkdown(errorMessage)}`);

@@ -1,5 +1,5 @@
 import { escapeMarkdown } from '../../lib/discord.js';
-import { PROFILE_LABEL, updateReleaseThread } from '../../lib/release.js';
+import { PROFILE_LABEL, buildTag, updateReleaseThread } from '../../lib/release.js';
 import { verifySignature } from '../../lib/verify.js';
 
 type EasBuildPayloadT = {
@@ -46,13 +46,15 @@ export async function POST(request: Request) {
     ? ` v${version}${payload.metadata?.appBuildVersion ? ` (${payload.metadata.appBuildVersion})` : ''}`
     : '';
 
+  const tag = buildTag(payload.metadata?.appBuildVersion);
+
   const logLines: string[] = [];
   let lineValue: string;
   if (payload.status === 'finished') {
-    lineValue = '빌드 완료';
+    lineValue = tag ? `${tag}완료` : '빌드 완료';
     logLines.push(`🛠 ${label}${versionText} 빌드 완료`);
   } else {
-    lineValue = '빌드 실패';
+    lineValue = tag ? `${tag}실패` : '빌드 실패';
     logLines.push(`❌ ${label}${versionText} 빌드 실패`);
     if (payload.error?.message) logLines.push(`• 원인: ${escapeMarkdown(payload.error.message)}`);
   }
