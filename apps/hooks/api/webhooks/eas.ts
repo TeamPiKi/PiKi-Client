@@ -42,6 +42,11 @@ export async function POST(request: Request) {
   const buildInfo = payload.turtleBuildId ? await getEasBuildInfo(payload.turtleBuildId) : null;
   const profile = buildInfo?.buildProfile ?? '';
   const label = PROFILE_LABEL[profile] ?? '제출';
+
+  /** iOS TestFlight 업로드 성공은 알리지 않는다 — 뒤따르는 ASC "처리 완료" 가 같은 얘기를 더 정확히 한다 */
+  if (payload.platform === 'ios' && payload.status === 'finished' && profile === 'production-dev') {
+    return Response.json({ ok: true, skipped: 'testflight-upload' });
+  }
   const versionText = buildInfo?.appVersion
     ? ` v${buildInfo.appVersion}${buildInfo.appBuildVersion ? ` (${buildInfo.appBuildVersion})` : ''}`
     : '';

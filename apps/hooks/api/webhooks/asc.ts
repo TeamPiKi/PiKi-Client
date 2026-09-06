@@ -44,6 +44,11 @@ const VERSION_STATE: Record<string, VersionStateT> = {
   },
 };
 
+const TESTFLIGHT_KEY = 'TestFlight 처리';
+
+/** 두 번째부터는 상태판 카운터만 올린다 — 어느 빌드인지 모르는 같은 줄이 반복되지 않도록 */
+const isFirstTestFlight = (lines: string[]) => !lines.some(line => line.startsWith(`• ${TESTFLIGHT_KEY}:`));
+
 /** ASC 페이로드에는 빌드 식별 정보가 없어, 상태판에 남은 이 사이클의 빌드 번호로 되짚는다 */
 const testFlightBuild = ({ title, lines }: RootStateT) => {
   const version = /v[\d.]+/.exec(title)?.[0] ?? '';
@@ -84,8 +89,11 @@ export async function POST(request: Request) {
   if (eventType === 'buildUploadStateUpdated') {
     if (newState === 'COMPLETE') {
       update = {
-        log: root => `✅ TestFlight 처리 완료${testFlightBuild(root)} · 테스트 배포 가능`,
-        line: { key: 'TestFlight 처리', value: prev => `${(parseInt(prev ?? '', 10) || 0) + 1}건 완료` },
+        log: root =>
+          isFirstTestFlight(root.lines)
+            ? `✅ TestFlight 처리 완료${testFlightBuild(root)} · 테스트 배포 가능`
+            : '',
+        line: { key: TESTFLIGHT_KEY, value: prev => `${(parseInt(prev ?? '', 10) || 0) + 1}건 완료` },
       };
     } else if (newState === 'FAILED') {
       update = { log: root => `❌ TestFlight 처리 실패${testFlightBuild(root)}` };

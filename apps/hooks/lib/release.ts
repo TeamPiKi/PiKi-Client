@@ -70,5 +70,6 @@ export const updateReleaseThread = async (update: ReleaseUpdateT) => {
   }
 
   await editChannelMessage(root.id, [nextTitle, ...lines].join('\n'));
-  await postThreadMessage(root.id, log);
+  /** 빈 로그는 상태판만 갱신하라는 뜻 (중복 알림 억제) */
+  if (log) await postThreadMessage(root.id, log);
 };
