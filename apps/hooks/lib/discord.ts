@@ -83,6 +83,14 @@ export const ensureThreadOnMessage = async (messageId: string, name: string) => 
   }
 };
 
+/** 스레드 닫기 — 새 글이 올라오면 디스코드가 자동으로 다시 연다 */
+export const archiveThread = async (threadId: string) => {
+  await discordRequest(`/channels/${threadId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ archived: true }),
+  });
+};
+
 export const postThreadMessage = async (threadId: string, content: string) => {
   await discordRequest(`/channels/${threadId}/messages`, { method: 'POST', body: messageBody(content) });
 };

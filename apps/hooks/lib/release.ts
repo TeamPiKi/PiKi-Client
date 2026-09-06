@@ -1,4 +1,5 @@
 import {
+  archiveThread,
   editChannelMessage,
   ensureThreadOnMessage,
   listRecentMessages,
@@ -72,4 +73,13 @@ export const updateReleaseThread = async (update: ReleaseUpdateT) => {
   await editChannelMessage(root.id, [nextTitle, ...lines].join('\n'));
   /** 빈 로그는 상태판만 갱신하라는 뜻 (중복 알림 억제) */
   if (log) await postThreadMessage(root.id, log);
+  /** 사이클이 끝났으면 스레드를 닫는다 — 글을 올린 뒤여야 다시 열리지 않는다 */
+  if (update.final) {
+    try {
+      await archiveThread(root.id);
+    } catch (error) {
+      /** 닫기 실패로 502 를 내면 재시도가 붙어 메시지가 중복된다 — 로그는 이미 남았으니 삼킨다 */
+      console.error('스레드 닫기 실패:', error);
+    }
+  }
 };
