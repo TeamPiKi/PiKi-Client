@@ -18,6 +18,8 @@ import { WebBridge, isWebview } from '@/utils/webBridge';
 
 const MAX_RETRY_DELAY_MS = 30_000;
 
+const INITIAL_RETRY_DELAY_MS = 1_000;
+
 const MAX_AUTH_RETRY_COUNT = 2;
 
 // wishId가 없거나 숫자가 아닌 경우에는 열린 상세가 낡지 않도록 모든 위시 상세 쿼리를 무효화한다
@@ -34,7 +36,7 @@ const buildToastMessage = (payload: NotificationSsePayloadT) =>
 export const useNotificationSSE = (enabled: boolean) => {
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const retryDelayRef = useRef(1_000);
+  const retryDelayRef = useRef(INITIAL_RETRY_DELAY_MS);
   const abortRef = useRef<AbortController | null>(null);
   const hasConnectedRef = useRef(false);
   const authFailCountRef = useRef(0);
@@ -49,11 +51,25 @@ export const useNotificationSSE = (enabled: boolean) => {
     if (!enabled) return;
 
     let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     // ref 는 언마운트/재로그인 후에도 남으므로, 이전 세션의 실패 횟수를 물려받지 않도록 초기화
     authFailCountRef.current = 0;
 
+    const scheduleReconnect = (delay: number) => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      const jitteredDelay = delay * (0.5 + Math.random() * 0.5);
+      reconnectTimer = setTimeout(connect, jitteredDelay);
+    };
+
     const connect = () => {
       if (cancelled) return;
+
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      // 기존 연결 정리 — 중복 알림 방지
+      abortRef.current?.abort();
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -78,11 +94,12 @@ export const useNotificationSSE = (enabled: boolean) => {
         headers,
         credentials: 'include',
         signal: controller.signal,
+        // 가시성 변화에 따른 라이브러리의 자동 연결 관리는 끄고, 아래 핸들러에서 백오프를 리셋해 직접 재연결한다
         openWhenHidden: true,
 
         onopen: async response => {
           if (response.ok) {
-            retryDelayRef.current = 1_000;
+            retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
             authFailCountRef.current = 0;
             if (hasConnectedRef.current) {
               // 재연결 성공 — 끊긴 동안 SSE 이벤트로 놓쳤을 수 있는 도메인만 재조회
@@ -100,9 +117,7 @@ export const useNotificationSSE = (enabled: boolean) => {
               cancelled = true;
               throw new Error('unauthorized');
             }
-            // 토큰 만료 시 공유 refresh 함수를 통해 갱신 후 재연결.
-            // 단일 진입점 — page request / API 호출과 같은 dedupe 큐를 공유한다.
-            // (직접 fetch 로 호출하면 동시 다발 race 로 백엔드가 401/500 거부 → 사용자 로그아웃)
+            // 토큰 만료 시 공유 갱신 경로를 사용해 동시 갱신 요청을 막는다
             try {
               await refreshClientToken();
               // refresh 성공 → onerror backoff 로 재연결
@@ -205,6 +220,14 @@ export const useNotificationSSE = (enabled: boolean) => {
           }
         },
 
+        // 서버가 스트림을 정상 종료한 경우는 onerror를 호출하지 않으므로 직접 재연결한다
+        onclose: () => {
+          if (cancelled) return;
+
+          retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
+          scheduleReconnect(INITIAL_RETRY_DELAY_MS);
+        },
+
         onerror: err => {
           if (cancelled) throw err; // fetchEventSource 재시도 중단
 
@@ -213,9 +236,7 @@ export const useNotificationSSE = (enabled: boolean) => {
 
           // throw하면 fetchEventSource가 재시도 멈춤 → setTimeout으로 수동 재연결
           controller.abort();
-          // 다수 클라이언트가 동시에 끊겼을 때 재연결이 한 시점에 몰리는 것 방지
-          const jitteredDelay = delay * (0.5 + Math.random() * 0.5);
-          setTimeout(connect, jitteredDelay);
+          scheduleReconnect(delay);
           throw err;
         },
       }).catch(() => {
@@ -223,10 +244,22 @@ export const useNotificationSSE = (enabled: boolean) => {
       });
     };
 
+    // 화면 복귀 시 예약된 재연결을 즉시 실행해 알림 공백을 줄인다
+    const handleVisibilityChange = () => {
+      if (document.hidden || !reconnectTimer) return;
+
+      retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
+      connect();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     connect();
 
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       abortRef.current?.abort();
     };
   }, [enabled, queryClient]);
