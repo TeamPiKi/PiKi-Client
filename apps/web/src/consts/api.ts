@@ -31,6 +31,7 @@ export const ENDPOINTS = {
   TOURNAMENT_ITEMS_FROM_WISH: (id: number) => `/api/v1/tournaments/${id}/items/wish`,
   TOURNAMENT_PLAY_LINK: (id: number) => `/api/v1/tournaments/${id}/play-link`,
   TOURNAMENT_JOIN: (id: number) => `/api/v1/tournaments/${id}/join`,
+  TOURNAMENT_NICKNAME: (id: number) => `/api/v1/tournaments/${id}/nickname`,
   TOURNAMENT_INVITE: (id: number) => `/api/v1/tournaments/${id}/invite`,
   TOURNAMENT_INVITE_PREVIEW_BY_CODE: '/api/v1/tournaments/by-invite-code',
   TOURNAMENT_FROM_PLAY_LINK: (sourceTournamentId: number) =>
