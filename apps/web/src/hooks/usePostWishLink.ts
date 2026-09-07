@@ -47,7 +47,7 @@ export const usePostWishLink = ({ onErrorMessage }: UsePostWishLinkOptionsT = {}
         const existingWish = getApiErrorData<{ wishId: number }>(error);
 
         if (typeof existingWish?.wishId === 'number') {
-          toast.error(getApiErrorMessage(error), {
+          toast(getApiErrorMessage(error), {
             duration: TOAST_ACTION_DURATION_MS,
             action: {
               label: '보러가기',
