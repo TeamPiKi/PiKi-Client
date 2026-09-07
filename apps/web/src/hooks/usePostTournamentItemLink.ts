@@ -10,14 +10,16 @@ import { getApiErrorCode, getApiErrorStatus, isGlobalNetError } from '@/utils/ap
 import { getApiErrorMessage } from '@/utils/getApiErrorMessage';
 
 type UsePostTournamentItemLinkOptionsT = {
-  /** 입력 폼처럼 에러를 화면 안에서 안내하는 경우 false — 4xx 토스트를 끈다 */
-  showErrorToast?: boolean;
+  /** 4xx 문구를 그릴 곳 — 입력 폼처럼 화면 안에서 안내할 때 넘긴다. 생략하면 토스트 */
+  onErrorMessage?: (message: string) => void;
 };
 
 export const usePostTournamentItemLink = (
   tournamentId: number,
-  { showErrorToast = true }: UsePostTournamentItemLinkOptionsT = {}
+  { onErrorMessage }: UsePostTournamentItemLinkOptionsT = {}
 ) => {
+  const showErrorMessage = onErrorMessage ?? toast.error;
+
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -34,7 +36,7 @@ export const usePostTournamentItemLink = (
 
         /** 토너먼트가 시작된 경우 */
         if (code === ERROR_CODE.TOURNAMENT_NOT_PENDING) {
-          if (showErrorToast) toast.error(getApiErrorMessage(error));
+          showErrorMessage(getApiErrorMessage(error));
           queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
           return;
         }
@@ -51,7 +53,7 @@ export const usePostTournamentItemLink = (
          * 400: 링크 형식 오류·미지원 쇼핑몰·아이템 32개 초과
          * 403: 토너먼트 참여 권한 없음
          */
-        if (showErrorToast) toast.error(getApiErrorMessage(error));
+        showErrorMessage(getApiErrorMessage(error));
 
         if (getApiErrorStatus(error) === 403) router.replace(ROUTES.HOME);
       },

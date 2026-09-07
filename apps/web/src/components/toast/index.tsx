@@ -40,8 +40,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: '!border-none',
-          title: '!body-2-semibold',
+          title: '!body-2-semibold !opacity-88',
           icon: '!size-6 !ml-0 !mr-0',
+          actionButton:
+            '!body-2-medium !h-auto !shrink-0 !bg-transparent !p-0 !text-text-neutral-tertiary',
         },
       }}
       {...props}
