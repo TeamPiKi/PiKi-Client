@@ -1,5 +1,6 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { WEBBRIDGE_MESSAGE_TYPE } from '@piki/core';
+import type { QueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
@@ -18,6 +19,14 @@ import { WebBridge, isWebview } from '@/utils/webBridge';
 const MAX_RETRY_DELAY_MS = 30_000;
 
 const MAX_AUTH_RETRY_COUNT = 2;
+
+// wishId가 없거나 숫자가 아닌 경우에는 열린 상세가 낡지 않도록 모든 위시 상세 쿼리를 무효화한다
+const invalidateWishQueries = (queryClient: QueryClient, wishId?: number) => {
+  queryClient.invalidateQueries({ queryKey: ['wishlists'] });
+
+  const isValidWishId = typeof wishId === 'number' && Number.isInteger(wishId) && wishId > 0;
+  queryClient.invalidateQueries({ queryKey: isValidWishId ? ['wish', wishId] : ['wish'] });
+};
 
 const buildToastMessage = (payload: NotificationSsePayloadT) =>
   payload.body ? `${payload.title} ${payload.body}` : payload.title;
@@ -154,10 +163,7 @@ export const useNotificationSSE = (enabled: boolean) => {
                       queryKey: ['tournament', payload.tournamentId],
                     });
                   } else if (payload.kind === 'WISH') {
-                    queryClient.invalidateQueries({ queryKey: ['wishlists'] });
-                    if (payload.wishId != null) {
-                      queryClient.invalidateQueries({ queryKey: ['wish', payload.wishId] });
-                    }
+                    invalidateWishQueries(queryClient, payload.wishId);
                   }
                   toast.success(message);
                   break;
@@ -169,10 +175,7 @@ export const useNotificationSSE = (enabled: boolean) => {
                       queryKey: ['tournament', payload.tournamentId],
                     });
                   } else if (payload.kind === 'WISH') {
-                    queryClient.invalidateQueries({ queryKey: ['wishlists'] });
-                    if (payload.wishId != null) {
-                      queryClient.invalidateQueries({ queryKey: ['wish', payload.wishId] });
-                    }
+                    invalidateWishQueries(queryClient, payload.wishId);
                   }
                   if (payload.type === 'ITEM_PARSING_INCOMPLETE') {
                     toast.info(message, { duration: 5000 });
