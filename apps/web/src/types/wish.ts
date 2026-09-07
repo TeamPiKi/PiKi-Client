@@ -1,4 +1,4 @@
-import type { PresignedImageRequestT, PresignedImageUploadT } from './image';
+import type { PresignedImageRequestT, PresignedImageResponseT } from './image';
 import type { ItemT } from './item';
 
 export type WishT = {
@@ -35,7 +35,7 @@ export type PostWishPresignedUrlRequestT = {
 };
 
 export type PostWishPresignedUrlResponseT = {
-  uploads: PresignedImageUploadT[];
+  uploads: PresignedImageResponseT[];
 };
 
 export type PostWishImagesRequestT = {

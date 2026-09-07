@@ -3,7 +3,7 @@ export type PresignedImageRequestT = {
   contentLength: number;
 };
 
-export type PresignedImageUploadT = {
+export type PresignedImageResponseT = {
   imageKey: string;
   uploadUrl: string;
   contentType: string;
