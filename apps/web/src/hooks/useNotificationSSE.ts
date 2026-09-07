@@ -147,6 +147,7 @@ export const useNotificationSSE = (enabled: boolean) => {
               const message = buildToastMessage(payload);
 
               switch (payload.type) {
+                case 'ITEM_REFRESH_COMPLETED':
                 case 'ITEM_PARSING_COMPLETED':
                   if (payload.kind === 'TOURNAMENT' && payload.tournamentId != null) {
                     queryClient.invalidateQueries({

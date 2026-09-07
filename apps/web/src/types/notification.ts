@@ -11,6 +11,7 @@ export type NotificationTypeT =
   | 'ITEM_PARSING_COMPLETED'
   | 'ITEM_PARSING_INCOMPLETE'
   | 'ITEM_PARSING_FAILED'
+  | 'ITEM_REFRESH_COMPLETED'
   | 'ANNOUNCEMENT';
 
 export type NotificationKindT = 'WISH' | 'TOURNAMENT' | 'SYSTEM';
