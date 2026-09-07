@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "check-types": {
+      "env": [
+        "DISCORD_BOT_TOKEN",
+        "DISCORD_DEPLOY_CHANNEL_ID",
+        "EAS_WEBHOOK_SECRET",
+        "ASC_WEBHOOK_SECRET",
+        "EXPO_TOKEN"
+      ]
+    }
+  }
+}

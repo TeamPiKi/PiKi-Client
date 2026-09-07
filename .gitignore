@@ -44,3 +44,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# infra install.sh 가 세션 시작마다 설치하는 공통 자산 (정본은 TeamPiKi/infra)
+.claude/settings.local.json
+.claude/worktrees/
+.claude/commands/
+.claude/rules/testing-principles.md
+shared-infra/

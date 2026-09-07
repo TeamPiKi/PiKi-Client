@@ -236,7 +236,9 @@ function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="body-2-regular break-keep text-text-neutral-primary">{item.name}</p>
+          <p className="line-clamp-2 body-2-regular break-keep text-text-neutral-primary">
+            {item.name}
+          </p>
           {count > 0 && (
             <button
               type="button"

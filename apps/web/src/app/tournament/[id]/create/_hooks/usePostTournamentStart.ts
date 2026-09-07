@@ -38,7 +38,8 @@ export const usePostTournamentStart = (tournamentId: number) => {
           /** 아직 시작할 수 없는 상태 — 토너먼트는 그대로 PENDING 이므로 이동시키지 않고 사유만 안내한다. */
           if (
             code === ERROR_CODE.TOURNAMENT_ITEM_NOT_READY_TO_START ||
-            code === ERROR_CODE.TOURNAMENT_ITEM_PRICE_REQUIRED
+            code === ERROR_CODE.TOURNAMENT_ITEM_PRICE_REQUIRED ||
+            code === ERROR_CODE.TOURNAMENT_ITEM_INCOMPLETE
           ) {
             toast.error(getApiErrorMessage(error));
             return;

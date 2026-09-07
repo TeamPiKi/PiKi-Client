@@ -16,6 +16,7 @@ import { ROUTES } from '@/consts/route';
 import { useGetMe } from '@/hooks/useGetMe';
 import { useNicknameValidation } from '@/hooks/useNicknameValidation';
 import { usePageBackground } from '@/hooks/usePageBackground';
+import { usePatchMe } from '@/hooks/usePatchMe';
 import type { GetInvitePreviewResponseT } from '@/types/tournament';
 
 type JoinPreviewClientProps = {

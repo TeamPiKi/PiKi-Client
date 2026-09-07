@@ -1,0 +1,97 @@
+# 웹 승격 — dev HEAD 를 web-v* 로 태깅하고 production 브랜치에 fast-forward 로 반영한 뒤
+# GitHub Release 를 생성한다. 순서가 계약이다: 푸터 버전이 빌드 시 GitHub API 로 최신 web-v* 태그를
+# 읽으므로, production 푸시(→ Vercel 빌드 시작)보다 태그 푸시가 반드시 먼저여야 한다.
+# 실행: Actions → Web Promote → Run workflow (bump 선택 또는 version 직접 입력)
+name: Web Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: '버전 증가 단위'
+        type: choice
+        options:
+          - minor
+          - patch
+          - major
+        default: minor
+      version:
+        description: '버전 직접 지정 (예: 1.11.0) — 입력 시 bump 무시'
+        required: false
+
+permissions: {}
+
+# 승격 동시 실행 방지 — 태그 계산과 ff 푸시 사이의 레이스를 차단한다.
+concurrency:
+  group: web-promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # 어느 ref 에서 dispatch 하든 승격 대상은 항상 dev
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: 다음 버전 계산
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          latest=$(git tag -l 'web-v*' --sort=-v:refname | head -1)
+          [ -n "$latest" ] || { echo "::error::web-v* 태그가 없습니다"; exit 1; }
+          if [ -n "$VERSION" ]; then
+            [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::버전 형식은 X.Y.Z 여야 합니다: $VERSION"; exit 1; }
+            next="$VERSION"
+          else
+            ver=${latest#web-v}
+            IFS=. read -r major minor patch <<< "$ver"
+            case "$BUMP" in
+              major) next="$((major + 1)).0.0" ;;
+              minor) next="${major}.$((minor + 1)).0" ;;
+              patch) next="${major}.${minor}.$((patch + 1))" ;;
+            esac
+          fi
+          echo "tag=web-v${next}" >> "$GITHUB_OUTPUT"
+          echo "prev=${latest}" >> "$GITHUB_OUTPUT"
+          echo "승격 버전: ${latest} → web-v${next} ($(git rev-parse --short HEAD))"
+
+      - name: fast-forward 가능 확인
+        run: |
+          set -euo pipefail
+          git fetch origin production
+          git merge-base --is-ancestor origin/production HEAD \
+            || { echo "::error::production 이 dev 의 조상이 아니라 fast-forward 불가 — production 에만 있는 커밋을 먼저 정리하세요"; exit 1; }
+
+      - name: 태그 푸시 → production ff 푸시 (순서 변경 금지)
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git tag "$TAG"
+          git push origin "refs/tags/$TAG"
+          git push origin HEAD:refs/heads/production
+
+      # 직전 web-v* 태그부터의 squash 커밋(=PR 제목)으로 릴리즈 노트 자동 생성.
+      # 시작 태그를 명시해야 한다 — 자동 추론은 "마지막 발행 릴리즈" 기준이라 app-v* 릴리즈가 생기면 어긋난다.
+      # 첫 줄 "배포일: YYYY-MM-DD(요일)" 은 기존 릴리즈들과의 포맷 통일
+      - name: GitHub Release 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PREV: ${{ steps.version.outputs.prev }}
+          TZ: Asia/Seoul
+        run: |
+          set -euo pipefail
+          days=(월 화 수 목 금 토 일)
+          wd=${days[$(($(date +%u) - 1))]}
+          gh release create "$TAG" --verify-tag --generate-notes --title "$TAG" \
+            --notes-start-tag "$PREV" \
+            --notes "배포일: $(date +%Y-%m-%d)(${wd})"

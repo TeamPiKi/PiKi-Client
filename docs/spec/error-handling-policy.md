@@ -1,7 +1,6 @@
 # 에러 처리 정책 (Error Handling Policy)
 
 > API 응답 실패를 **어느 계층에서 어떻게 처리할지**에 대한 팀 공통 규약입니다.
-> 관련: [`api-status-audit.md`](./api-status-audit.md) (전수조사) · [`issues/EPIC-api-status-response.md`](./issues/EPIC-api-status-response.md) (대응 이슈)
 
 ---
 

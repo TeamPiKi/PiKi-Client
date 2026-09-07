@@ -16,6 +16,10 @@ export const ANALYTICS_EVENT = {
   WISH_ADD_START: 'wish_add_start',
   WISH_ADD_COMPLETE: 'wish_add_complete',
 
+  /** 홈 */
+  HOME_VIEW: 'home_view',
+  NEW_TOURNAMENT_CLICK: 'new_tournament_click',
+
   /** 토너먼트 funnel */
   TOURNAMENT_CREATE: 'tournament_create',
   TOURNAMENT_START: 'tournament_start',

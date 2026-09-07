@@ -18,10 +18,10 @@ export const ROUTES = {
   MYPAGE: '/mypage',
   MYPAGE_EDIT: '/mypage/edit',
   PLAY_FROM_LINK: (sourceTournamentId: number) => `/play/${sourceTournamentId}`,
+  TOURNAMENT_HISTORY: '/archive/tournament',
 
   /** 3. Member Only */
   WISHLIST: '/archive/wish',
-  TOURNAMENT_HISTORY: '/archive/tournament',
   WISH_EDIT: (wishId: number) => `/archive/wish/${wishId}`,
   MYPAGE_WITHDRAW: '/mypage/withdraw',
 

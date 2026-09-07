@@ -16,10 +16,7 @@ function ConfirmStartDialog({ open, onOpenChange, onConfirm }: ConfirmStartDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="flex max-w-83 flex-col items-center gap-5 p-4"
-      >
+      <DialogContent showCloseButton={false} className="items-center gap-5">
         <div className="flex flex-col items-center gap-3">
           <ConfirmStartFace className="size-7.5 text-icon-neutral-secondary" aria-hidden />
 

@@ -203,6 +203,7 @@ function Page() {
         onError={handleWebViewError}
         onHttpError={handleWebViewHttpError}
         allowsBackForwardNavigationGestures
+        setBuiltInZoomControls={false}
         cacheEnabled
         sharedCookiesEnabled
         webviewDebuggingEnabled={__DEV__}

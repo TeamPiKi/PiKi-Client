@@ -16,6 +16,9 @@ Sentry.init({
   tracesSampleRate: 0,
   /** PII 기본 마스킹 (Session Replay 는 web 만, 앱은 에러/크래시만) */
   sendDefaultPii: false,
+  /** 메인 스레드가 5초 이상 멈추면 스택을 떠서 다음 실행 때 보고 — 부팅 고착 진단용 (iOS) */
+  enableAppHangTracking: true,
+  appHangTimeoutInterval: 5,
 });
 
 /** 백그라운드 FCM 메시지 핸들러 */

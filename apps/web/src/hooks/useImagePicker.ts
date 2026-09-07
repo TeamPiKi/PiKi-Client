@@ -11,7 +11,6 @@ import { WebBridge, isWebview } from '@/utils/webBridge';
 
 const DEFAULT_MAX_COUNT = 5;
 
-/** 서버 업로드 한도(413) 사전검증 — 초과 파일은 업로드 전에 걸러 왕복을 막는다 */
 const MAX_IMAGE_FILE_SIZE_MB = 5;
 const MAX_IMAGE_FILE_SIZE_BYTES = MAX_IMAGE_FILE_SIZE_MB * 1024 * 1024;
 
@@ -55,7 +54,7 @@ export const useImagePicker = ({
 
   const handleImagesSelect = useCallback(
     async ({ files, skippedCount }: ImagePickerResultT) => {
-      // 서버 한도 초과 파일은 업로드 전에 걸러서 413 왕복을 막는다 (웹/웹뷰 공통 경로).
+      // 한도 초과 파일은 처리 전에 거른다 (웹/웹뷰 공통 경로).
       const validFiles = files.filter(file => file.size <= MAX_IMAGE_FILE_SIZE_BYTES);
       const oversizedCount = files.length - validFiles.length;
       if (oversizedCount > 0) {

@@ -54,7 +54,7 @@ function InviteTournamentDialog() {
 
       /** 409(참여 불가): `TOURNAMENT-005`(이미 시작), `TOURNAMENT-021`(만료) 및 매핑되지 않은 409 는 만료 안내 */
       if (apiStatus === 409) {
-        /** TODO: `TOURNAMENT-005` 가 진행 중·완료를 한 코드로 덮어 완료된 토너먼트에도 "이미 시작된" 안내가 나간다 (docs/spec/api-status-audit.md §E) */
+        /** TODO: `TOURNAMENT-005` 가 진행 중·완료를 한 코드로 덮어 완료된 토너먼트에도 "이미 시작된" 안내가 나간다 — 서버에 코드 분리 요청 필요 */
         setJoinErrorType(
           getApiErrorCode(error) === ERROR_CODE.TOURNAMENT_NOT_PENDING
             ? 'ALREADY_STARTED'
