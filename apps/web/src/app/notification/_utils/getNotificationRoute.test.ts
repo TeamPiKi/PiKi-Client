@@ -20,7 +20,14 @@ describe('getNotificationRoute', () => {
     }
   );
 
-  it.each(PARSING_TYPES)('%s — 위시에서 담은 아이템은 위시리스트로 보낸다', type => {
+  it.each(PARSING_TYPES)(
+    '%s — 위시에서 담은 아이템은 refId 가 아니라 wishId 로 위시 상세로 이동한다',
+    type => {
+      expect(getNotificationRoute(type, 99, { kind: 'WISH', wishId: 12 })).toBe('/archive/wish/12');
+    }
+  );
+
+  it.each(PARSING_TYPES)('%s — wishId 가 없는 구버전 알림은 위시함 목록으로 보낸다', type => {
     expect(getNotificationRoute(type, 99, { kind: 'WISH' })).toBe('/archive/wish');
   });
 });
