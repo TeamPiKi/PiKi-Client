@@ -125,6 +125,8 @@ export const ERROR_MESSAGE_MAP = {
   /** UPLOAD */
   'UPLOAD-001': '올바르지 않은 이미지 업로드 정보예요. 업로드를 다시 시도해 주세요.',
   'UPLOAD-002': '아직 업로드되지 않은 이미지예요. 업로드를 마친 뒤 다시 시도해 주세요.',
+  'UPLOAD-003': '이미지는 5MB 까지 올릴 수 있어요.',
+  'UPLOAD-004': '이미지 크기 정보가 올바르지 않아요.',
 
   /** PRODUCTIMAGE */
   'PRODUCTIMAGE-001': '빈 이미지 파일은 올릴 수 없어요.',
@@ -262,6 +264,8 @@ export const ERROR_CODE = {
   /** 이미지 업로드 */
   UPLOAD_INVALID_KEY: 'UPLOAD-001',
   UPLOAD_NOT_UPLOADED: 'UPLOAD-002',
+  UPLOAD_SIZE_EXCEEDED: 'UPLOAD-003',
+  UPLOAD_INVALID_SIZE: 'UPLOAD-004',
 
   /** 상품 이미지 */
   PRODUCT_IMAGE_EMPTY_IMAGE: 'PRODUCTIMAGE-001',
