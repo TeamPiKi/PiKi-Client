@@ -1,6 +1,5 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { WEBBRIDGE_MESSAGE_TYPE } from '@piki/core';
-import type { Query } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
@@ -19,12 +18,6 @@ import { WebBridge, isWebview } from '@/utils/webBridge';
 const MAX_RETRY_DELAY_MS = 30_000;
 
 const MAX_AUTH_RETRY_COUNT = 2;
-
-/** 아이템 파싱 알림의 refId 는 itemId 라서, 위시 상세 캐시(`['wish', wishId]`)는 item.id 로 찾는다 */
-// TODO: payload 에 wishId 가 추가되면 `['wish', payload.wishId]` 무효화로 대체 (tournamentId 와 동일한 형태로 요청해둠)
-const isWishQueryOfItem = (query: Query, itemId: number) =>
-  query.queryKey[0] === 'wish' &&
-  (query.state.data as { item?: { id: number } } | undefined)?.item?.id === itemId;
 
 const buildToastMessage = (payload: NotificationSsePayloadT) =>
   payload.body ? `${payload.title} ${payload.body}` : payload.title;
@@ -161,9 +154,9 @@ export const useNotificationSSE = (enabled: boolean) => {
                     });
                   } else if (payload.kind === 'WISH') {
                     queryClient.invalidateQueries({ queryKey: ['wishlists'] });
-                    queryClient.invalidateQueries({
-                      predicate: query => isWishQueryOfItem(query, payload.refId),
-                    });
+                    if (payload.wishId != null) {
+                      queryClient.invalidateQueries({ queryKey: ['wish', payload.wishId] });
+                    }
                   }
                   toast.success(message);
                   break;
@@ -176,9 +169,9 @@ export const useNotificationSSE = (enabled: boolean) => {
                     });
                   } else if (payload.kind === 'WISH') {
                     queryClient.invalidateQueries({ queryKey: ['wishlists'] });
-                    queryClient.invalidateQueries({
-                      predicate: query => isWishQueryOfItem(query, payload.refId),
-                    });
+                    if (payload.wishId != null) {
+                      queryClient.invalidateQueries({ queryKey: ['wish', payload.wishId] });
+                    }
                   }
                   if (payload.type === 'ITEM_PARSING_INCOMPLETE') {
                     toast.info(message, { duration: 5000 });
