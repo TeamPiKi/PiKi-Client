@@ -1,5 +1,5 @@
 import type { TOURNAMENT_PLAY_TYPE, TOURNAMENT_STATUS } from '@/consts/tournament';
-import type { PresignedImageUploadT } from '@/types/image';
+import type { PresignedImageRequestT, PresignedImageUploadT } from '@/types/image';
 import type { ItemStatusT } from '@/types/item';
 
 export type TournamentStatusT = (typeof TOURNAMENT_STATUS)[keyof typeof TOURNAMENT_STATUS];
@@ -44,7 +44,7 @@ export type GetTournamentListResponseT = {
 }[];
 
 export type PostTournamentItemPresignedUrlRequestT = {
-  contentTypes: string[];
+  images: PresignedImageRequestT[];
 };
 
 export type PostTournamentItemPresignedUrlResponseT = {
