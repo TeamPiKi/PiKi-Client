@@ -30,6 +30,7 @@ const isMemberAndGuestRoute = (pathname: string) => {
   if (matchesPath(pathname, ROUTES.TOURNAMENT_JOIN_BY_CODE)) return true;
   if (matchesPath(pathname, '/play')) return true;
   if (matchesPath(pathname, ROUTES.NOTIFICATION)) return true;
+  if (matchesPath(pathname, ROUTES.TOURNAMENT_HISTORY)) return true;
   if (pathname === ROUTES.MYPAGE) return true;
   if (pathname === ROUTES.MYPAGE_EDIT) return true;
 
@@ -42,7 +43,6 @@ const isAuthorizedRoute = (pathname: string) =>
 const isMemberOnlyRoute = (pathname: string) => {
   if (pathname === ROUTES.MYPAGE_WITHDRAW) return true;
   if (matchesPath(pathname, ROUTES.WISHLIST)) return true;
-  if (matchesPath(pathname, ROUTES.TOURNAMENT_HISTORY)) return true;
 
   return false;
 };

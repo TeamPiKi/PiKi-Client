@@ -43,6 +43,7 @@ export { default as ClipboardIconFill } from './clipboard.svg';
 export { default as CloseCircularIconFill } from './close-circular.svg';
 export { default as CloseIconFill } from './close.svg';
 export { default as CollapseIconFill } from './collapse.svg';
+export { default as CompareIconFill } from './compare.svg';
 export { default as ContactsIconFill } from './contacts.svg';
 export { default as CopyIconFill } from './copy.svg';
 export { default as CrosshairIconFill } from './crosshair.svg';

@@ -474,7 +474,6 @@ closes #이슈번호
 ## 🌐 API 통신 — Response Schema 규약
 
 > 에러를 **어느 계층에서 어떻게 처리할지**는 [`docs/spec/error-handling-policy.md`](docs/spec/error-handling-policy.md)가 단일 기준이다.
-> 엔드포인트별 status 대응 현황은 [`docs/spec/api-status-audit.md`](docs/spec/api-status-audit.md) 참고.
 
 ### 기본 원칙
 

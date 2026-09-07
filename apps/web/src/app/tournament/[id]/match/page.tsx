@@ -35,6 +35,7 @@ const NOT_STARTABLE_ERRORS: { status: number; codes: string[] }[] = [
     codes: [
       ERROR_CODE.TOURNAMENT_ITEM_NOT_READY_TO_START,
       ERROR_CODE.TOURNAMENT_ITEM_PRICE_REQUIRED,
+      ERROR_CODE.TOURNAMENT_ITEM_INCOMPLETE,
     ],
   },
 ];

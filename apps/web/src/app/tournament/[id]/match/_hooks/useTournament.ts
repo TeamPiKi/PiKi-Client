@@ -17,7 +17,7 @@ import type {
   GetTournamentResponseT,
   TournamentMatchT,
 } from '../../_common/_types/tournamentResponse';
-import { type TransitionStageT, getRoundLabel, getTransitionStage } from '../_consts/rounds';
+import { type TransitionStageT, getRoundLabel, getTransitionStage } from '../_utils/rounds';
 import { usePostRecordMatch } from './usePostRecordMatch';
 
 type UseTournamentArgs = {

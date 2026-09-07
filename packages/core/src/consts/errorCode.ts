@@ -10,8 +10,9 @@ export const ERROR_MESSAGE_MAP = {
   'COMMON-FORBIDDEN': '접근할 수 없는 페이지예요.',
   'COMMON-NOT-FOUND': '요청하신 정보를 찾을 수 없어요.',
   'COMMON-INVALID-INPUT': '다시 한번 확인해 주세요.',
-  'COMMON-METHOD-NOT-ALLOWED': '요청을 처리하지 못했어요.',
-  'COMMON-UNSUPPORTED-MEDIA-TYPE': '요청을 처리하지 못했어요.',
+  'COMMON-METHOD-NOT-ALLOWED': '지원하지 않는 요청 방식이에요.',
+  'COMMON-UNSUPPORTED-MEDIA-TYPE': '지원하지 않는 형식이에요.',
+  'COMMON-TOO-MANY-REQUESTS': '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.',
 
   /** 공통 5xx */
   'COMMON-RETRYABLE': '일시적인 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
@@ -81,6 +82,13 @@ export const ERROR_MESSAGE_MAP = {
   'TOURNAMENT-031': '플레이 링크로 참여한 토너먼트에서는 친구 결과를 볼 수 없어요.',
   'TOURNAMENT-032': '플레이 링크로 만든 토너먼트에는 아이템을 추가할 수 없어요.',
   'TOURNAMENT-033': '조회 개수는 1 이상이어야 해요.',
+  'TOURNAMENT-034': '지금 대결할 수 있는 조합이 아니에요.',
+  'TOURNAMENT-035': '이미 결과가 기록된 대결이에요.',
+  'TOURNAMENT-036': '토너먼트 만들기는 회원만 이용할 수 있어요.',
+  'TOURNAMENT-037': '이 토너먼트에는 지금 아이템을 추가할 수 없어요. 잠시 후 다시 시도해 주세요.',
+  'TOURNAMENT-038': '플레이 링크로 만든 토너먼트에서는 아이템을 수정하거나 삭제할 수 없어요.',
+  'TOURNAMENT-039': '정보가 비어 있는 상품이에요. 내용을 채운 뒤 담아 주세요.',
+  'TOURNAMENT-040': '정보가 비어 있는 상품이 있어요. 모두 채워야 시작할 수 있어요.',
 
   /** WISH */
   'WISH-001': '위시리스트는 회원만 이용할 수 있어요.',
@@ -92,6 +100,7 @@ export const ERROR_MESSAGE_MAP = {
   'WISH-007': '링크가 없는 항목은 새로고침할 수 없습니다.',
   'WISH-008': '추출에 실패한 항목은 새로고침 대신 정보를 직접 입력해 복구해 주세요.',
   'WISH-009': '이미 위시리스트에 등록된 상품이에요.',
+  'WISH-010': '지금은 더 담을 수 없어요. 잠시 후 다시 시도해 주세요.',
 
   /** ITEM */
   'ITEM-003': '상품 이름을 입력해 주세요.',
@@ -107,16 +116,10 @@ export const ERROR_MESSAGE_MAP = {
   'ANNOUNCEMENT-001': '존재하지 않는 공지예요.',
   'ANNOUNCEMENT-002': '페이지를 불러오지 못했어요. 새로고침 해주세요.',
 
-  /** PROXY */
-  'PROXY-001': '허용되지 않은 이미지 도메인이에요.',
-  'PROXY-002': '이미지 크기가 너무 커요.',
-  'PROXY-003': '이미지를 불러오지 못했어요.',
-
   /** STORAGE */
   'STORAGE-001': '이미지를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.',
   'STORAGE-002': '이미지 업로드 URL 을 발급하지 못했어요. 잠시 후 다시 시도해 주세요.',
   'STORAGE-003': '이미지 업로드 상태를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.',
-  'STORAGE-004': '이미지를 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.',
   'STORAGE-005': '이미지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
 
   /** UPLOAD */
@@ -148,6 +151,7 @@ export const ERROR_CODE = {
   COMMON_INVALID_INPUT: 'COMMON-INVALID-INPUT',
   COMMON_METHOD_NOT_ALLOWED: 'COMMON-METHOD-NOT-ALLOWED',
   COMMON_UNSUPPORTED_MEDIA_TYPE: 'COMMON-UNSUPPORTED-MEDIA-TYPE',
+  COMMON_TOO_MANY_REQUESTS: 'COMMON-TOO-MANY-REQUESTS',
   COMMON_RETRYABLE: 'COMMON-RETRYABLE',
   COMMON_SERVER_BUSY: 'COMMON-SERVER-BUSY',
   COMMON_SERVER_ERROR: 'COMMON-SERVER-ERROR',
@@ -215,6 +219,13 @@ export const ERROR_CODE = {
   TOURNAMENT_CLONED_CANNOT_VIEW_GROUP_RESULT: 'TOURNAMENT-031',
   TOURNAMENT_CLONED_CANNOT_ADD_ITEMS: 'TOURNAMENT-032',
   TOURNAMENT_INVALID_LIMIT: 'TOURNAMENT-033',
+  TOURNAMENT_INVALID_MATCH_PAIR: 'TOURNAMENT-034',
+  TOURNAMENT_MATCH_ALREADY_RECORDED: 'TOURNAMENT-035',
+  TOURNAMENT_GUEST_CANNOT_CREATE: 'TOURNAMENT-036',
+  TOURNAMENT_ITEM_ADD_RATE_LIMITED: 'TOURNAMENT-037',
+  TOURNAMENT_CLONED_CANNOT_MODIFY_ITEMS: 'TOURNAMENT-038',
+  TOURNAMENT_INCOMPLETE_ITEM_CANNOT_ADD: 'TOURNAMENT-039',
+  TOURNAMENT_ITEM_INCOMPLETE: 'TOURNAMENT-040',
 
   /** 위시 */
   WISH_GUEST_CANNOT_USE_WISHLIST: 'WISH-001',
@@ -226,6 +237,7 @@ export const ERROR_CODE = {
   WISH_NOT_REFRESHABLE: 'WISH-007',
   WISH_FAILED_NOT_REFRESHABLE: 'WISH-008',
   WISH_ALREADY_EXISTS: 'WISH-009',
+  WISH_RATE_LIMITED: 'WISH-010',
 
   /** 상품 */
   ITEM_NAME_REQUIRED_FOR_READY: 'ITEM-003',
@@ -241,16 +253,10 @@ export const ERROR_CODE = {
   ANNOUNCEMENT_NOT_FOUND: 'ANNOUNCEMENT-001',
   ANNOUNCEMENT_INVALID_CURSOR: 'ANNOUNCEMENT-002',
 
-  /** 이미지 프록시 */
-  PROXY_BLOCKED_DOMAIN: 'PROXY-001',
-  PROXY_IMAGE_TOO_LARGE: 'PROXY-002',
-  PROXY_FETCH_FAILED: 'PROXY-003',
-
   /** 이미지 스토리지 */
   STORAGE_UPLOAD_FAILED: 'STORAGE-001',
   STORAGE_PRESIGN_FAILED: 'STORAGE-002',
   STORAGE_EXISTS_CHECK_FAILED: 'STORAGE-003',
-  STORAGE_DELETE_FAILED: 'STORAGE-004',
   STORAGE_LOAD_FAILED: 'STORAGE-005',
 
   /** 이미지 업로드 */

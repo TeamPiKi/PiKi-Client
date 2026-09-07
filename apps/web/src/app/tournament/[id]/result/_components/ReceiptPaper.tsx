@@ -183,7 +183,10 @@ function ProductCard({ tournamentId, product, highlight = false }: ProductCardPr
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <p className="body-2-regular wrap-break-word break-keep text-text-neutral-primary">
+        <p
+          data-receipt-product-name
+          className="line-clamp-2 body-2-regular break-keep text-text-neutral-primary"
+        >
           {product.name}
         </p>
         <p className="body-2-semibold text-text-neutral-primary">{formatPrice(product.price)}</p>

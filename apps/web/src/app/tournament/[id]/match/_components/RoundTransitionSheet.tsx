@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 
-import type { TransitionStageT } from '../_consts/rounds';
+import type { TransitionStageT } from '../_utils/rounds';
 import './RoundTransitionSheet.css';
 
 // ── Countdown arc ─────────────────────────────────────────────────────────────

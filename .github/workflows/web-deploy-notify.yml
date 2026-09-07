@@ -1,0 +1,140 @@
+# Vercel 배포 결과 Discord 알림 — Vercel Git 연동이 배포마다 만드는 GitHub Deployment 의
+# 상태 변화(deployment_status)를 구독한다. 이 이벤트는 default 브랜치(dev)에 있는 워크플로우만
+# 실행하므로, dev 에 머지된 뒤부터 동작한다.
+# 전송은 webhook 이 아니라 허거덩 봇 본인(DISCORD_BOT_TOKEN — PR 봇과 공유)이 한다.
+# secrets: DISCORD_BOT_TOKEN(기존), DISCORD_DEPLOY_CHANNEL_ID(신규 — 배포알림 채널), DISCORD_USER_MAP(기존)
+name: Web Deploy Notify
+
+on: deployment_status
+
+permissions: {}
+
+jobs:
+  notify:
+    if: contains(fromJSON('["success", "failure", "error"]'), github.event.deployment_status.state)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Production 승격과 dev 브랜치 배포만 알린다 — PR Preview 는 소음이라 제외.
+      # Vercel 은 deployment.ref 에 브랜치명이 아니라 커밋 SHA 를 넣는다(실측, payload 도 빈 객체).
+      # squash 머지라 PR 커밋은 dev 에 존재하지 않으므로, dev 도달 가능 여부가 dev 배포와 PR Preview 를 가른다
+      - name: 알림 대상 판별
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENVIRONMENT: ${{ github.event.deployment.environment }}
+          SHA: ${{ github.event.deployment.sha }}
+          WEB_PROJECT: piki
+        run: |
+          set -euo pipefail
+          # Vercel 프로젝트가 둘 이상이면 환경 이름에 "Production – <프로젝트>" 처럼 프로젝트명이 붙는다
+          # (단일 프로젝트 시절 배포는 접미사 없는 "Production"/"Preview" 라 함께 받는다).
+          # 웹 외 프로젝트(piki-notify 등) 배포가 [WEB] 알림으로 나가지 않도록 여기서 거른다
+          case "$ENVIRONMENT" in
+            "Production" | "Production – $WEB_PROJECT")
+              echo "notify=true" >> "$GITHUB_OUTPUT"
+              echo "branch=production" >> "$GITHUB_OUTPUT"
+              exit 0 ;;
+            "Preview" | "Preview – $WEB_PROJECT") ;;
+            *)
+              echo "notify=false" >> "$GITHUB_OUTPUT"
+              echo "웹($WEB_PROJECT) 외 프로젝트 배포 ($ENVIRONMENT) — 알림 생략"
+              exit 0 ;;
+          esac
+          status=$(gh api "repos/${{ github.repository }}/compare/dev...$SHA" --jq .status)
+          if [ "$status" = "identical" ] || [ "$status" = "behind" ]; then
+            echo "notify=true" >> "$GITHUB_OUTPUT"
+            echo "branch=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "notify=false" >> "$GITHUB_OUTPUT"
+            echo "PR Preview 배포 (compare status: $status) — 알림 생략"
+          fi
+
+      # Vercel 배포의 actor 는 vercel[bot] 이라, 배포자는 커밋 author 로 잡는다
+      - name: 커밋 정보 조회
+        if: steps.gate.outputs.notify == 'true'
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.deployment.sha }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/commits/$SHA" > commit.json
+          echo "message=$(jq -r '.commit.message | split("\n")[0]' commit.json)" >> "$GITHUB_OUTPUT"
+          echo "author=$(jq -r '.author.login // .commit.author.name' commit.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Discord 전송 (허거덩 봇)
+        if: steps.gate.outputs.notify == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_DEPLOY_CHANNEL_ID }}
+          DISCORD_USER_MAP: ${{ secrets.DISCORD_USER_MAP }}
+          STATE: ${{ github.event.deployment_status.state }}
+          BRANCH: ${{ steps.gate.outputs.branch }}
+          SHA: ${{ github.event.deployment.sha }}
+          LOG_URL: ${{ github.event.deployment_status.target_url }}
+          MESSAGE: ${{ steps.commit.outputs.message }}
+          AUTHOR: ${{ steps.commit.outputs.author }}
+        run: |
+          set -euo pipefail
+          [ -n "$DISCORD_BOT_TOKEN" ] || { echo "::error::DISCORD_BOT_TOKEN secret 이 없습니다"; exit 1; }
+          [ -n "$CHANNEL_ID" ] || { echo "::error::DISCORD_DEPLOY_CHANNEL_ID secret 이 없습니다"; exit 1; }
+
+          # github 로그인 → discord id 멘션. 매핑 없으면 로그인 이름으로 폴백(핑은 안 감)
+          DISCORD_MAP="$DISCORD_USER_MAP"; [ -n "$DISCORD_MAP" ] || DISCORD_MAP='{}'
+          DISCORD_ID=$(echo "$DISCORD_MAP" | jq -r --arg login "$AUTHOR" '.[$login] // empty')
+          # 매핑 없으면 이름 텍스트 폴백(핑 없음) — 커밋 author 명은 외부 입력이라 Markdown 특수문자 이스케이프
+          AUTHOR_MENTION="${DISCORD_ID:+<@$DISCORD_ID>}"
+          AUTHOR_MENTION="${AUTHOR_MENTION:-$(printf '%s' "$AUTHOR" | sed 's/[][\`]/\\&/g')}"
+
+          if [ "$BRANCH" = "production" ]; then
+            LABEL="[WEB·PROD]"; DOMAIN="piki.day"
+          else
+            LABEL="[WEB·DEV]"; DOMAIN="dev.piki.day"
+          fi
+
+          # 배포 커밋을 가리키는 web-v* 태그 = 이번에 나간 버전 (승격 배포에서만 잡힌다).
+          # 조회 실패(API 오류·rate limit)는 알림을 막지 않는다 — 버전·릴리즈 줄만 생략.
+          # --paginate 는 페이지별 배열을 내므로 스트림으로 모은 뒤 semver 최신 하나를 고른다
+          VERSION=""
+          if [ "$BRANCH" = "production" ]; then
+            VERSION=$(gh api --paginate "repos/${{ github.repository }}/tags?per_page=100" \
+              | jq -r --arg sha "$SHA" '.[] | select(.commit.sha == $sha) | .name | select(startswith("web-v"))' \
+              | sort -V | tail -1) || VERSION=""
+          fi
+
+          # prod 는 버전+릴리즈 노트, dev 는 무엇이 머지됐는지(커밋)를 보여준다.
+          # named 링크도 임베드 카드를 만들므로 URL 은 <> 로 감싼다
+          if [ "$STATE" = "success" ]; then
+            TEXT=$(printf '✅ %s PiKi 배포 성공! (<https://%s>)' "$LABEL" "$DOMAIN")
+          else
+            TEXT=$(printf '❌ %s PiKi 배포 실패' "$LABEL")
+          fi
+          if [ "$BRANCH" = "production" ]; then
+            [ -n "$VERSION" ] && TEXT=$(printf '%s\n• 버전: `%s`' "$TEXT" "$VERSION")
+          else
+            # 커밋 제목은 외부 입력 — 링크 라벨 탈출(](url)) 인젝션을 이스케이프로 차단
+            SAFE_MESSAGE=$(printf '%s' "$MESSAGE" | sed 's/[][\`]/\\&/g')
+            COMMIT_URL="https://github.com/${{ github.repository }}/commit/$SHA"
+            TEXT=$(printf '%s\n• 커밋: [%s](<%s>)' "$TEXT" "$SAFE_MESSAGE" "$COMMIT_URL")
+          fi
+          TEXT=$(printf '%s\n• 배포자: %s' "$TEXT" "$AUTHOR_MENTION")
+          # releases/latest 폴백 금지 — 다른 릴리즈(예: app-v*)를 가리킬 수 있어 버전을 아는 경우에만 링크
+          if [ "$STATE" = "success" ] && [ "$BRANCH" = "production" ] && [ -n "$VERSION" ]; then
+            TEXT=$(printf '%s\n• [릴리즈 노트](<https://github.com/${{ github.repository }}/releases/tag/%s>)' "$TEXT" "$VERSION")
+          fi
+          # target_url 이 비면 깨진 링크(<>) 가 나가므로 값이 있을 때만 로그 줄을 붙인다
+          if [ "$STATE" != "success" ] && [ -n "$LOG_URL" ]; then
+            TEXT=$(printf '%s\n• [배포 로그](<%s>)' "$TEXT" "$LOG_URL")
+          fi
+
+          HTTP_CODE=$(curl -s --max-time 10 -o resp.json -w '%{http_code}' \
+            -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data "$(jq -n --arg content "$TEXT" --arg did "$DISCORD_ID" \
+              '{content: $content, allowed_mentions: {parse: [], users: (if $did != "" then [$did] else [] end)}}')") || HTTP_CODE="000"
+          [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ] \
+            || { echo "::error::Discord 알림 전송 실패 (HTTP $HTTP_CODE) $(cat resp.json 2>/dev/null)"; exit 1; }

@@ -28,10 +28,7 @@ function OwnerStartedDialog({
 }: OwnerStartedDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="flex max-w-83 flex-col items-center gap-5 p-4"
-      >
+      <DialogContent showCloseButton={false} className="items-center gap-5">
         <FireIconFill className="size-10 text-icon-neutral-secondary" aria-hidden />
 
         <div className="flex flex-col items-center gap-1">

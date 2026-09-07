@@ -11,9 +11,6 @@ export const getTransitionStage = (nextRoundItemCount: number): TransitionStageT
 // 라운드 라벨 — 현재 라운드 아이템 수 기준 (8 → "8강", 4 → "4강", 2 → "결승")
 export const getRoundLabel = (roundItemCount: number, matchIndexInRound: number) => {
   if (roundItemCount === 2) return '🏆 결승전';
-  const koreanRoundName = `${roundItemCount}강`;
-  const totalMatches = roundItemCount / 2;
-  return totalMatches === 1
-    ? koreanRoundName
-    : `${koreanRoundName} 라운드 ${matchIndexInRound + 1}`;
+
+  return `${roundItemCount}강 라운드 ${matchIndexInRound + 1}`;
 };

@@ -1,0 +1,88 @@
+# 웹 E2E — 웹(및 웹이 의존하는 packages/core)이 바뀐 PR 에서만 돈다.
+# 브라우저 설치 + 웹 빌드까지 하는 무거운 job 이라 apps/hooks 전용 변경에서는 건너뛴다.
+# required check 가 아니므로 경로 필터로 job 이 생략돼도 머지가 막히지 않는다 (ci.yml 의 Lint, Type Check 는 항상 돈다)
+name: E2E
+
+on:
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - 'apps/web/**'
+      - 'packages/core/**'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
+      - '.github/workflows/e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "VERSION=$(pnpm --filter piki-web exec playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.VERSION }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter piki-web exec playwright install --with-deps chromium
+
+      - name: Install Playwright OS deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter piki-web exec playwright install-deps chromium
+
+      # NEXT_PUBLIC_API_URL 은 E2E 목 스텁 주소로 고정 — rewrites destination 이
+      # 빌드 타임에 박히므로 실서버 접근을 원천 차단한다 (e2e/consts.ts 의 MOCK_API_URL)
+      - name: Build web
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:4010
+        run: pnpm build:web
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 7

@@ -32,6 +32,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // NOTE: 웹뷰 줌 방지용 — 일반 Safari 는 user-scalable=no 를 무시하므로 브라우저 확대 접근성은 유지된다.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
 };
 
