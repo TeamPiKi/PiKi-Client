@@ -12,9 +12,8 @@ export const getActiveBasketCount = (itemCount: number) => {
   return Math.min(BASKET_COUNT, filledBaskets);
 };
 
-/** itemCount개일 때 마지막 아이템이 들어 있는 바구니 인덱스 (0-based) */
-export const getBasketIndexForLastItem = (itemCount: number) => {
-  if (itemCount <= 0) return 0;
+export const getBasketIndexForItem = (itemIndex: number) => {
+  if (itemIndex <= 0) return 0;
 
-  return Math.min(BASKET_COUNT - 1, Math.floor((itemCount - 1) / ITEMS_PER_BASKET));
+  return Math.min(BASKET_COUNT - 1, Math.floor(itemIndex / ITEMS_PER_BASKET));
 };

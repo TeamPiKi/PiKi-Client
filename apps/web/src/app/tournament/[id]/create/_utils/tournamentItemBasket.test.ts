@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { BASKET_COUNT, ITEMS_PER_BASKET } from '../_consts/tournamentItemBasket';
-import { getActiveBasketCount, getBasketIndexForLastItem } from './tournamentItemBasket';
+import { getActiveBasketCount, getBasketIndexForItem } from './tournamentItemBasket';
 
 const MAX_ITEM_COUNT = ITEMS_PER_BASKET * BASKET_COUNT;
 
@@ -27,17 +27,21 @@ describe('getActiveBasketCount', () => {
   });
 });
 
-describe('getBasketIndexForLastItem', () => {
-  it('아이템이 없으면 첫 번째 바구니를 가리킨다', () => {
-    expect(getBasketIndexForLastItem(0)).toBe(0);
+describe('getBasketIndexForItem', () => {
+  it('첫 아이템은 첫 번째 바구니를 가리킨다', () => {
+    expect(getBasketIndexForItem(0)).toBe(0);
   });
 
   it('바구니 경계에서 다음 바구니로 넘어간다', () => {
-    expect(getBasketIndexForLastItem(ITEMS_PER_BASKET)).toBe(0);
-    expect(getBasketIndexForLastItem(ITEMS_PER_BASKET + 1)).toBe(1);
+    expect(getBasketIndexForItem(ITEMS_PER_BASKET - 1)).toBe(0);
+    expect(getBasketIndexForItem(ITEMS_PER_BASKET)).toBe(1);
+  });
+
+  it('마지막 아이템은 마지막 바구니에 들어간다', () => {
+    expect(getBasketIndexForItem(MAX_ITEM_COUNT - 1)).toBe(BASKET_COUNT - 1);
   });
 
   it('마지막 바구니 인덱스를 넘기지 않는다', () => {
-    expect(getBasketIndexForLastItem(MAX_ITEM_COUNT)).toBe(BASKET_COUNT - 1);
+    expect(getBasketIndexForItem(MAX_ITEM_COUNT)).toBe(BASKET_COUNT - 1);
   });
 });

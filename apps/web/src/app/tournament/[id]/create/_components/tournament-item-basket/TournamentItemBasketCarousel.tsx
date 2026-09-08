@@ -13,7 +13,7 @@ import {
   BASKET_STACK_GAP,
   ITEMS_PER_BASKET,
 } from '../../_consts/tournamentItemBasket';
-import { getActiveBasketCount, getBasketIndexForLastItem } from '../../_utils/tournamentItemBasket';
+import { getActiveBasketCount, getBasketIndexForItem } from '../../_utils/tournamentItemBasket';
 import TournamentItemBasket from './TournamentItemBasket';
 
 type TournamentItemBasketCarouselProps = {
@@ -63,7 +63,7 @@ function TournamentItemBasketCarousel({
     if (!carouselApi) return;
 
     if (items.length > prevItemCountRef.current) {
-      carouselApi.scrollTo(getBasketIndexForLastItem(items.length));
+      carouselApi.scrollTo(getBasketIndexForItem(items.length - 1));
     }
 
     prevItemCountRef.current = items.length;
