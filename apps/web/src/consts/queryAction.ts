@@ -17,3 +17,8 @@ export const QUERY_ACTION = {
 } as const;
 
 export type QueryActionValueT = (typeof QUERY_ACTION.VALUE)[keyof typeof QUERY_ACTION.VALUE];
+
+/** `action` 과 달리 값이 고정되지 않은(리소스 id 등) 쿼리 파라미터 키 */
+export const QUERY_PARAM = {
+  HIGHLIGHT_TOURNAMENT_ITEM: 'highlightItem', // 알림 클릭시 강조할 토너먼트 아이템
+} as const;

@@ -22,6 +22,19 @@ describe('getNotificationRoute', () => {
   );
 
   it.each(ITEM_TYPES)(
+    '%s — 토너먼트 아이템은 담기 화면에서 강조하도록 tournamentItemId 를 쿼리로 싣는다',
+    type => {
+      expect(
+        getNotificationRoute(type, 99, {
+          kind: 'TOURNAMENT',
+          tournamentId: 7,
+          tournamentItemId: 42,
+        })
+      ).toBe('/tournament/7/create?highlightItem=42');
+    }
+  );
+
+  it.each(ITEM_TYPES)(
     '%s — 위시에서 담은 아이템은 refId 가 아니라 wishId 로 위시 상세로 이동한다',
     type => {
       expect(getNotificationRoute(type, 99, { kind: 'WISH', wishId: 12 })).toBe('/archive/wish/12');
