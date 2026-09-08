@@ -50,10 +50,14 @@ jobs:
       contents: write
     steps:
       # 어느 ref 에서 dispatch 하든 승격 대상은 항상 dev
+      # persist-credentials: false — 기본값이면 git 자격증명이 러너에 남아
+      # 뒤따르는 pnpm install·eas build(서드파티 코드)가 dev·릴리즈 태그를 밀 수 있다.
+      # 토큰은 마지막 푸시 스텝에서만 명시적으로 넣는다.
       - uses: actions/checkout@v4
         with:
           ref: dev
           fetch-depth: 0
+          persist-credentials: false
 
       - name: 버전 계산
         id: version
@@ -83,6 +87,12 @@ jobs:
               exit 1
             fi
             NEXT="$INPUT_VERSION"
+            # 오타 한 번에 app.json 이 역행하는 것을 막는다 (태그 없는 낮은 버전은 중복 검사로 안 걸린다)
+            if [ "$NEXT" = "$CURRENT" ] || \
+               [ "$(printf '%s\n%s\n' "$CURRENT" "$NEXT" | sort -V | tail -1)" != "$NEXT" ]; then
+              echo "::error::입력 버전 $NEXT 이 현재 $CURRENT 보다 높지 않습니다"
+              exit 1
+            fi
           else
             IFS=. read -r MAJOR MINOR PATCH <<< "$CURRENT"
             case "$BUMP" in
@@ -151,17 +161,19 @@ jobs:
         env:
           NEXT: ${{ steps.version.outputs.next }}
           BUMPED: ${{ steps.version.outputs.bump }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          REMOTE="https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}.git"
 
           if [ "$BUMPED" = "true" ]; then
             git add apps/app/app.json
             git commit -m "chore: 앱 버전 v$NEXT"
             git tag "app-v$NEXT"
-            git push origin dev
-            git push origin "app-v$NEXT"
+            git push "$REMOTE" HEAD:dev
+            git push "$REMOTE" "refs/tags/app-v$NEXT"
             exit 0
           fi
 
@@ -172,7 +184,7 @@ jobs:
             exit 0
           fi
           git tag -f "$TAG"
-          git push -f origin "refs/tags/$TAG"
+          git push -f "$REMOTE" "refs/tags/$TAG"
           echo "태그 $TAG 를 $(git rev-parse --short HEAD) 로 옮겼습니다"
 
       - name: 요약
