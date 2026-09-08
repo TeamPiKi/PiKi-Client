@@ -95,9 +95,13 @@ function TournamentCard({
 
         <div className="flex items-center gap-1 caption-1-regular">
           <PersonIconFill className="size-3 shrink-0 text-sky-blue-500" aria-hidden />
-          <span className="text-text-neutral-secondary">함께 담은 {participantCount}</span>
+          <span className="text-text-neutral-secondary">
+            함께 담은 <span className="text-text-neutral-primary">{participantCount}</span>
+          </span>
           <div className="mx-2 h-2 w-px shrink-0 bg-border-neutral-muted" aria-hidden />
-          <span className="text-text-neutral-secondary">플레이한 {playedCount}</span>
+          <span className="text-text-neutral-secondary">
+            플레이한 <span className="text-text-neutral-primary">{playedCount}</span>
+          </span>
         </div>
       </div>
     </article>
