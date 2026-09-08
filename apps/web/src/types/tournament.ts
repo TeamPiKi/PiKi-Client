@@ -39,7 +39,8 @@ export type GetTournamentListResponseT = {
   name: string;
   status: TournamentStatusT;
   createdAt: string;
-  participantProfileImages: string[];
+  participantCount: number;
+  playerCount: number;
   thumbnailUrls: string[];
 }[];
 
