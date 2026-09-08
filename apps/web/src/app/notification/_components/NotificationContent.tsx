@@ -50,6 +50,7 @@ function NotificationContent() {
     const route = getNotificationRoute(notification.type, notification.refId, {
       kind: notification.kind,
       tournamentId: notification.tournamentId,
+      wishId: notification.wishId,
     });
     postNotificationsReadMutation({ ids: [notification.id] });
     if (route) router.push(route);
