@@ -9,7 +9,7 @@ export {
   S3_UPLOAD_ERROR_MESSAGE,
   SERVER_ERROR_MESSAGE,
 } from './consts/errorCode';
-export { SUPPORTED_IMAGE_MIME_TYPES } from './consts/image';
+export { MAX_IMAGE_UPLOAD_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from './consts/image';
 export {
   PUSH_NOTIFICATION_TYPE,
   WEBBRIDGE_MESSAGE_TYPE,
