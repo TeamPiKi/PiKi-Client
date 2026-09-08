@@ -13,6 +13,7 @@ import {
 import PikiLogo from '@/assets/images/piki-logo-cart.svg';
 import ReceiptZigzag from '@/assets/images/tournament/result/receipt-zigzag.svg';
 import TrophyBadge from '@/assets/images/tournament/result/trophy-badge.svg';
+import HostBadge from '@/components/common/host-badge';
 import Spinner from '@/components/spinner';
 import { ROUTES } from '@/consts/route';
 import { useBackWithFallback } from '@/hooks/useBackWithFallback';
@@ -283,15 +284,22 @@ function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
               key={chooser.userId}
               className="flex items-center gap-1.5 rounded-full bg-gray-50 py-1 pr-3 pl-1"
             >
-              <Image
-                src={chooser.profileImage}
-                alt={chooser.nickname}
-                width={20}
-                height={20}
-                className="size-5 rounded-full bg-gray-50 object-cover"
-                unoptimized
-              />
-              <span className="caption-1-semibold text-text-neutral-primary">
+              <span className="relative shrink-0">
+                <Image
+                  src={chooser.profileImage}
+                  alt={chooser.nickname}
+                  width={20}
+                  height={20}
+                  className="size-5 rounded-full bg-gray-50 object-cover"
+                  unoptimized
+                />
+                {chooser.isHost && (
+                  <span className="pointer-events-none absolute -bottom-px -right-1.5">
+                    <HostBadge />
+                  </span>
+                )}
+              </span>
+              <span className={cn('caption-1-semibold text-text-neutral-primary', chooser.isHost && 'ml-1.5')}>
                 {chooser.nickname}
               </span>
             </li>
