@@ -6,12 +6,14 @@ import BottomCta from '@/components/bottom-cta';
 import { Dialog } from '@/components/dialog';
 import GetItemDialogContent from '@/components/get-item-dialog';
 import { ITEM_STATUS } from '@/consts/item';
-import { QUERY_ACTION } from '@/consts/queryAction';
+import { QUERY_ACTION, QUERY_PARAM } from '@/consts/queryAction';
 import { useGetMe } from '@/hooks/useGetMe';
 import { useQueryAction } from '@/hooks/useQueryAction';
+import { useQueryParamOnce } from '@/hooks/useQueryParamOnce';
 import { useSSEFallback } from '@/hooks/useSSEFallback';
 import { hasSentInvite } from '@/utils/inviteSentSession';
 import { hasParsingItems } from '@/utils/item';
+import { parseIdParam } from '@/utils/parseIdParam';
 
 import { useGetTournament } from '../../_common/_hooks/useGetTournament';
 import { PREV_ITEM_COUNT_KEY } from '../_consts/tournamentItemBasket';
@@ -55,6 +57,10 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
   });
 
   const scrollToLast = isScrollToLastQuery || isScrollToLastSession;
+
+  /** 알림에서 진입한 경우 */
+  const highlightItemIdParam = useQueryParamOnce(QUERY_PARAM.HIGHLIGHT_TOURNAMENT_ITEM);
+  const highlightItemId = highlightItemIdParam ? parseIdParam(highlightItemIdParam) : null;
 
   useEffect(() => {
     sessionStorage.removeItem(scrollToLastKey);
@@ -210,6 +216,7 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
           items={pending?.items}
           scrollToLast={scrollToLast}
           previousItemCount={previousItemCount}
+          highlightItemId={highlightItemId}
           isAddItemBlocked={isAddItemBlocked}
           participantImageMap={participantImageMap}
           bottomSlot={
