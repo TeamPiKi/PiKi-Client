@@ -47,7 +47,13 @@ function ProductImage({ src, alt, status, className }: ProductImageProps) {
       {isProcessing && loadingFallback}
       {isError && errorFallback(status)}
       {!isProcessing && !isError && src && (
-        <BaseImage src={src} alt={alt} className="object-cover" loadingFallback={loadingFallback} />
+        <BaseImage
+          src={src}
+          alt={alt}
+          sizes="68px"
+          className="object-cover"
+          loadingFallback={loadingFallback}
+        />
       )}
     </div>
   );

@@ -9,6 +9,8 @@ export const isReadyItemInfo = (item: ItemInfoT): item is ReadyItemInfoT =>
   item.name !== null &&
   item.price !== null;
 
+export const ITEM_IMAGE_SIZES = '(max-width: 480px) calc(100vw - 40px), 440px';
+
 type ItemInfoScreenConfigT = {
   viewTitle: string;
   deleteConfirmTitle: string;

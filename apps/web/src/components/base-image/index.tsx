@@ -11,8 +11,10 @@ import { cn } from '@/utils/cn';
 type ImgEvent = SyntheticEvent<HTMLImageElement>;
 type ImageState = 'loading' | 'success' | 'error';
 
-type BaseImageProps = Omit<ImageProps, 'src' | 'fill'> & {
+type BaseImageProps = Omit<ImageProps, 'src' | 'fill' | 'sizes'> & {
   src: ImageProps['src'];
+  /** 항상 fill 로 렌더하므로 없으면 100vw 로 떨어져 화면 폭짜리 이미지를 받는다 */
+  sizes: string;
   loadingFallback?: ReactNode;
   errorFallback?: ReactNode;
 };

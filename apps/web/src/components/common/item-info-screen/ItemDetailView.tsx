@@ -5,6 +5,7 @@ import Spacing from '@/components/spacing';
 import ItemInfoCard from './ItemInfoCard';
 import ItemLinkBanner from './ItemLinkBanner';
 import ItemMemoCard from './ItemMemoCard';
+import { ITEM_IMAGE_SIZES } from './itemInfoScreen.const';
 import type { MemoT, PriceRefreshT, ReadyItemInfoT } from './itemInfoScreen.type';
 
 type ItemDetailViewProps = {
@@ -20,10 +21,15 @@ function ItemDetailView({ item, memo, priceRefresh, onEdit }: ItemDetailViewProp
   return (
     <>
       <div className="relative mt-5 aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
-        <Image src={item.imageUrl} alt="상품 이미지" fill sizes="440px" className="object-cover" />
-        {item.sourceUrl && (
-          <ItemLinkBanner sourceUrl={item.sourceUrl} />
-        )}
+        <Image
+          src={item.imageUrl}
+          alt="상품 이미지"
+          fill
+          preload
+          sizes={ITEM_IMAGE_SIZES}
+          className="object-cover"
+        />
+        {item.sourceUrl && <ItemLinkBanner sourceUrl={item.sourceUrl} />}
       </div>
 
       <Spacing size={12} />

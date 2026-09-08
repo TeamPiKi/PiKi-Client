@@ -27,7 +27,7 @@ function WishReadyCard({
           <BaseImage
             src={imageUrl}
             alt={name ?? ''}
-            sizes="(max-width: 480px) calc(100vw - 40px - 8px), 216px"
+            sizes="(max-width: 480px) 50vw, 240px"
             preload={preload}
             loadingFallback={<Skeleton className="absolute inset-0 rounded-none" />}
             errorFallback={
