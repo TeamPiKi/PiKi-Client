@@ -33,7 +33,7 @@ function TournamentListClient({ isGuest = false }: TournamentListClientProps) {
           status={tournament.status}
           name={tournament.name}
           participantCount={tournament.participantCount}
-          playerCount={tournament.playerCount}
+          playedCount={tournament.playedCount}
           showMorePopover={false}
         />
       ))}

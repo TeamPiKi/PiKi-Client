@@ -40,7 +40,7 @@ export type GetTournamentListResponseT = {
   status: TournamentStatusT;
   createdAt: string;
   participantCount: number;
-  playerCount: number;
+  playedCount: number;
   thumbnailUrls: string[];
 }[];
 

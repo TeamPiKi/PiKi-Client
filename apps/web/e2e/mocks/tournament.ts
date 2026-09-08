@@ -20,7 +20,7 @@ export const MOCK_TOURNAMENT_LIST: GetTournamentListResponseT = [
     status: 'PENDING',
     createdAt: '2026-01-01T00:00:00Z',
     participantCount: 1,
-    playerCount: 0,
+    playedCount: 0,
     thumbnailUrls: [],
   },
 ];

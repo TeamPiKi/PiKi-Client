@@ -21,7 +21,7 @@ type TournamentCardProps = {
   /** 본인 포함 함께 담은 참여자 수. 2명 이상이면 더보기에 '친구 목록 보기' 메뉴 노출. */
   participantCount: number;
   /** 실제로 플레이한 인원 수 */
-  playerCount: number;
+  playedCount: number;
   className?: string;
   showMorePopover?: boolean;
   scrollRestoration?: ScrollRestorationTargetT;
@@ -33,7 +33,7 @@ function TournamentCard({
   name,
   imageUrls = [],
   participantCount,
-  playerCount,
+  playedCount,
   className,
   showMorePopover = true,
   scrollRestoration,
@@ -97,7 +97,7 @@ function TournamentCard({
           <PersonIconFill className="size-3 shrink-0 text-sky-blue-500" aria-hidden />
           <span className="text-text-neutral-secondary">함께 담은 {participantCount}</span>
           <div className="mx-2 h-2 w-px shrink-0 bg-border-neutral-muted" aria-hidden />
-          <span className="text-text-neutral-secondary">플레이한 {playerCount}</span>
+          <span className="text-text-neutral-secondary">플레이한 {playedCount}</span>
         </div>
       </div>
     </article>
