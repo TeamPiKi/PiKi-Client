@@ -29,7 +29,7 @@ export const ROUTES = {
 
   /** 4. Authorized Guest or Member */
   TOURNAMENT_CREATE: (tournamentId: number, highlightItemId?: number) =>
-    highlightItemId
+    Number.isSafeInteger(highlightItemId) && Number(highlightItemId) > 0
       ? `/tournament/${tournamentId}/create?${QUERY_PARAM.HIGHLIGHT_TOURNAMENT_ITEM}=${highlightItemId}`
       : `/tournament/${tournamentId}/create`,
   TOURNAMENT_ADD_ITEM_BY_WISH: (tournamentId: number) =>

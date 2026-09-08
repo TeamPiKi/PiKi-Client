@@ -34,6 +34,19 @@ describe('getNotificationRoute', () => {
     }
   );
 
+  it.each([0, -1, 1.5, Number.NaN, '1&action=welcome-join'])(
+    'payload 는 런타임 검증이 없어 tournamentItemId 가 %s 로 오면 강조 쿼리 없이 담기 화면으로만 이동한다',
+    invalidId => {
+      expect(
+        getNotificationRoute('ITEM_PARSING_FAILED', 99, {
+          kind: 'TOURNAMENT',
+          tournamentId: 7,
+          tournamentItemId: invalidId as number,
+        })
+      ).toBe('/tournament/7/create');
+    }
+  );
+
   it.each(ITEM_TYPES)(
     '%s — 위시에서 담은 아이템은 refId 가 아니라 wishId 로 위시 상세로 이동한다',
     type => {
