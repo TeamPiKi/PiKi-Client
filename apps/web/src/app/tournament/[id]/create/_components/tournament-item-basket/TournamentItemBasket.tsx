@@ -65,7 +65,7 @@ function TournamentItemBasket({
         src={basketImg}
         alt={`장바구니 ${basketIndex + 1}`}
         fill
-        preload
+        preload={basketIndex === 0}
         sizes="(max-width: 480px) 80vw, 384px"
         className="object-contain"
       />
