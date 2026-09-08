@@ -133,6 +133,7 @@ function TournamentItemBasketCarousel({
             isAddItemBlocked={isAddItemBlocked}
             maxHeight={basketMaxHeight}
             participantImageMap={participantImageMap}
+            highlightItemId={highlightItemId}
           />
         </div>
 
@@ -165,6 +166,7 @@ function TournamentItemBasketCarousel({
                 isAddItemBlocked={isAddItemBlocked}
                 maxHeight={basketMaxHeight}
                 participantImageMap={participantImageMap}
+                highlightItemId={highlightItemId}
               />
             </CarouselItem>
           ))}
