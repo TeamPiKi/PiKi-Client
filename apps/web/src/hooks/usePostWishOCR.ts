@@ -24,7 +24,7 @@ export const usePostWishOCR = () => {
   } = useMutation({
     mutationFn: async (files: File[]) => {
       const { uploads } = await postWishPresignedUrl({
-        contentTypes: files.map(file => file.type),
+        images: files.map(file => ({ contentType: file.type, contentLength: file.size })),
       });
 
       /** 일부 실패 시 전체 실패 처리 */
