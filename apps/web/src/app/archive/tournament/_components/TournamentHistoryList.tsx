@@ -36,8 +36,8 @@ function TournamentHistoryList({ statuses, playType, statusTab }: Props) {
           tournamentId={tournament.tournamentId}
           status={tournament.status}
           name={tournament.name}
-          profileImageUrls={tournament.participantProfileImages}
-          participantCount={tournament.participantProfileImages.length}
+          participantCount={tournament.participantCount}
+          playedCount={tournament.playedCount}
           scrollRestoration={{ namespace: SCROLL_NAMESPACE.ARCHIVE_TOURNAMENT, scope: statusTab }}
         />
       ))}
