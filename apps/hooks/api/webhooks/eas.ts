@@ -1,7 +1,6 @@
-import { escapeMarkdown, sendDiscordMessage } from '../../lib/discord.js';
+import { escapeMarkdown } from '../../lib/discord.js';
 import { getEasBuildInfo } from '../../lib/eas.js';
-import type { ReleaseUpdateT } from '../../lib/release.js';
-import { PROFILE_LABEL, buildTag, updateReleaseThread } from '../../lib/release.js';
+import { PLATFORM_LABEL, PROFILE_LABEL, buildTag, lineKey, updateReleaseThread } from '../../lib/release.js';
 import { verifySignature } from '../../lib/verify.js';
 
 type EasSubmitPayloadT = {
@@ -15,7 +14,7 @@ type EasSubmitPayloadT = {
   } | null;
 };
 
-/** EAS Submit 웹훅 (eas webhook:create --event SUBMIT) — 배포 스레드에 제출 결과를 기록 */
+/** EAS Submit 웹훅 (eas webhook:create --event SUBMIT) — 배포 스레드에 업로드 결과를 기록 */
 export async function POST(request: Request) {
   const secret = process.env.EAS_WEBHOOK_SECRET;
   if (!secret) {
@@ -40,13 +39,10 @@ export async function POST(request: Request) {
   }
 
   const buildInfo = payload.turtleBuildId ? await getEasBuildInfo(payload.turtleBuildId) : null;
+  const platform = payload.platform ?? '';
   const profile = buildInfo?.buildProfile ?? '';
-  const label = PROFILE_LABEL[profile] ?? '';
+  const label = [PLATFORM_LABEL[platform], PROFILE_LABEL[profile]].filter(Boolean).join(' ');
 
-  /** iOS TestFlight 업로드 성공은 알리지 않는다 — 뒤따르는 ASC "처리 완료" 가 같은 얘기를 더 정확히 한다 */
-  if (payload.platform === 'ios' && payload.status === 'finished' && profile === 'production-dev') {
-    return Response.json({ ok: true, skipped: 'testflight-upload' });
-  }
   const versionText = buildInfo?.appVersion
     ? ` v${buildInfo.appVersion}${buildInfo.appBuildVersion ? ` (${buildInfo.appBuildVersion})` : ''}`
     : '';
@@ -58,13 +54,13 @@ export async function POST(request: Request) {
   const logLines: string[] = [];
   let lineValue: string;
   if (payload.status === 'finished') {
-    /** 프로필을 모르면 심사인지 TestFlight 인지 단정할 수 없어 중립 문구로 남긴다 */
-    const doneText = profile === 'production' ? '심사 제출 완료' : '제출 완료';
+    /** eas submit 은 스토어 업로드까지다 — 심사 제출은 ASC 에서 사람이 따로 눌러야 한다 */
+    const doneText = platform === 'ios' ? 'ASC 업로드 완료' : '스토어 업로드 완료';
     lineValue = `${tag}${doneText}`;
     logLines.push(['✅', subject, doneText].filter(Boolean).join(' '));
   } else {
-    lineValue = `${tag}제출 실패`;
-    logLines.push(['❌', subject, '스토어 제출 실패'].filter(Boolean).join(' '));
+    lineValue = `${tag}업로드 실패`;
+    logLines.push(['❌', subject, '스토어 업로드 실패'].filter(Boolean).join(' '));
     const errorMessage = payload.submissionInfo?.error?.message;
     if (errorMessage) logLines.push(`• 원인: ${escapeMarkdown(errorMessage)}`);
   }
@@ -74,18 +70,17 @@ export async function POST(request: Request) {
   if (payload.status === 'errored' && payload.submissionInfo?.logsUrl) {
     logLines.push(`• [제출 로그](<${payload.submissionInfo.logsUrl}>)`);
   }
-  const log = logLines.join('\n');
 
   try {
-    if (payload.platform === 'ios') {
-      const update: ReleaseUpdateT = { log, version: buildInfo?.appVersion ?? null };
-      /** 프로필을 모르면(EXPO_TOKEN 없음 등) 상태판 줄은 건드리지 않고 로그만 남긴다 */
-      if (PROFILE_LABEL[profile]) update.line = { key: label, value: lineValue };
-      await updateReleaseThread(update);
-    } else {
-      /** Android 는 스레드 사이클 밖 — 단건 알림으로 전송 */
-      await sendDiscordMessage(`[AND] PiKi ${log}`);
-    }
+    await updateReleaseThread({
+      log: logLines.join('\n'),
+      /** 프로필·플랫폼을 모르면(EXPO_TOKEN 없음 등) 상태판 줄은 건드리지 않고 로그만 남긴다 */
+      lines:
+        PLATFORM_LABEL[platform] && PROFILE_LABEL[profile]
+          ? [{ key: lineKey(platform, profile), value: lineValue }]
+          : [],
+      version: buildInfo?.appVersion ?? null,
+    });
   } catch (error) {
     console.error(error);
     return Response.json({ error: 'discord update failed' }, { status: 502 });
