@@ -1,6 +1,12 @@
 'use client';
 
-import { type ImagePickerSuccessPayloadT, WEBBRIDGE_MESSAGE_TYPE } from '@piki/core';
+import {
+  ERROR_CODE,
+  ERROR_MESSAGE_MAP,
+  type ImagePickerSuccessPayloadT,
+  MAX_IMAGE_UPLOAD_BYTES,
+  WEBBRIDGE_MESSAGE_TYPE,
+} from '@piki/core';
 import type { ChangeEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -10,9 +16,6 @@ import { nativeImageToFile } from '@/utils/handleImage';
 import { WebBridge, isWebview } from '@/utils/webBridge';
 
 const DEFAULT_MAX_COUNT = 5;
-
-const MAX_IMAGE_FILE_SIZE_MB = 5;
-const MAX_IMAGE_FILE_SIZE_BYTES = MAX_IMAGE_FILE_SIZE_MB * 1024 * 1024;
 
 type ImagePickerResultT = {
   files: File[];
@@ -54,12 +57,11 @@ export const useImagePicker = ({
 
   const handleImagesSelect = useCallback(
     async ({ files, skippedCount }: ImagePickerResultT) => {
-      // 한도 초과 파일은 처리 전에 거른다 (웹/웹뷰 공통 경로).
-      const validFiles = files.filter(file => file.size <= MAX_IMAGE_FILE_SIZE_BYTES);
+      /** 한도 초과 파일은 처리 전에 거른다 */
+      const validFiles = files.filter(file => file.size <= MAX_IMAGE_UPLOAD_BYTES);
       const oversizedCount = files.length - validFiles.length;
-      if (oversizedCount > 0) {
-        toast.error(`${MAX_IMAGE_FILE_SIZE_MB}MB 이하 이미지만 업로드할 수 있어요.`);
-      }
+      if (oversizedCount > 0) 
+        toast.error(ERROR_MESSAGE_MAP[ERROR_CODE.UPLOAD_SIZE_EXCEEDED]);
       if (validFiles.length === 0) return;
 
       setIsPending(true);

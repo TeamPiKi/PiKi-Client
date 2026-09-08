@@ -22,6 +22,7 @@ type TournamentItemBasketProps = {
   maxHeight?: number;
   isAddItemBlocked?: boolean;
   participantImageMap?: Map<string, string>;
+  highlightItemId?: number | null;
 };
 
 function TournamentItemBasket({
@@ -30,6 +31,7 @@ function TournamentItemBasket({
   maxHeight,
   isAddItemBlocked = false,
   participantImageMap,
+  highlightItemId = null,
 }: TournamentItemBasketProps) {
   const { id } = useParams<{ id: string }>();
   const tournamentId = Number(id);
@@ -76,6 +78,9 @@ function TournamentItemBasket({
           <div className="grid w-[46.5%] grid-cols-2 gap-3.5 pt-[17%]">
             {addSlot}
             {items.map((item, index) => {
+              const isHighlighted =
+                highlightItemId !== null && item.tournamentItemId === highlightItemId;
+
               /** READY 아이템은 누구나 진입 가능 — 주최자·본인이 아니면 조회 전용으로 열림 */
               if (item.status === ITEM_STATUS.READY) {
                 return (
@@ -87,6 +92,7 @@ function TournamentItemBasket({
                       item={item}
                       index={index}
                       participantImageMap={participantImageMap}
+                      isHighlighted={isHighlighted}
                     />
                   </Link>
                 );
@@ -112,6 +118,7 @@ function TournamentItemBasket({
                           item={item}
                           index={index}
                           participantImageMap={participantImageMap}
+                          isHighlighted={isHighlighted}
                         />
                       </button>
                     </DialogTrigger>
@@ -130,6 +137,7 @@ function TournamentItemBasket({
                   item={item}
                   index={index}
                   participantImageMap={participantImageMap}
+                  isHighlighted={isHighlighted}
                 />
               );
             })}

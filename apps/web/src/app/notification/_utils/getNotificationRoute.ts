@@ -4,7 +4,7 @@ import type { NotificationItemT, NotificationTypeT } from '@/types/notification'
 export const getNotificationRoute = (
   type: NotificationTypeT,
   refId: number,
-  extra?: Pick<NotificationItemT, 'kind' | 'tournamentId' | 'wishId'>
+  extra?: Pick<NotificationItemT, 'kind' | 'tournamentId' | 'tournamentItemId' | 'wishId'>
 ): string | null => {
   switch (type) {
     case 'TOURNAMENT_JOINED':
@@ -21,7 +21,7 @@ export const getNotificationRoute = (
     case 'ITEM_PARSING_FAILED':
     case 'ITEM_REFRESH_COMPLETED':
       if (extra?.kind === 'TOURNAMENT' && extra.tournamentId) {
-        return ROUTES.TOURNAMENT_CREATE(extra.tournamentId);
+        return ROUTES.TOURNAMENT_CREATE(extra.tournamentId, extra.tournamentItemId);
       }
       if (extra?.kind === 'WISH' && extra.wishId) {
         return ROUTES.WISH_EDIT(extra.wishId);

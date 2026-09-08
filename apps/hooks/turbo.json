@@ -8,7 +8,12 @@
         "DISCORD_DEPLOY_CHANNEL_ID",
         "EAS_WEBHOOK_SECRET",
         "ASC_WEBHOOK_SECRET",
-        "EXPO_TOKEN"
+        "EXPO_TOKEN",
+        "ASC_API_ISSUER_ID",
+        "ASC_API_KEY_ID",
+        "ASC_API_PRIVATE_KEY_B64",
+        "DISCORD_PLAY_SUBMITTER_ID",
+        "DISCORD_APPSTORE_SUBMITTER_ID"
       ]
     }
   }

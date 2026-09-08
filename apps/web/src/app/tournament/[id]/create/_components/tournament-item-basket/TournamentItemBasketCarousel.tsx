@@ -13,7 +13,7 @@ import {
   BASKET_STACK_GAP,
   ITEMS_PER_BASKET,
 } from '../../_consts/tournamentItemBasket';
-import { getActiveBasketCount, getBasketIndexForLastItem } from '../../_utils/tournamentItemBasket';
+import { getActiveBasketCount, getBasketIndexForItem } from '../../_utils/tournamentItemBasket';
 import TournamentItemBasket from './TournamentItemBasket';
 
 type TournamentItemBasketCarouselProps = {
@@ -21,6 +21,7 @@ type TournamentItemBasketCarouselProps = {
   scrollToLast?: boolean;
   /** 위시 담기 등 재진입 시점의 기존 아이템 개수 */
   previousItemCount?: number | null;
+  highlightItemId?: number | null;
   isAddItemBlocked?: boolean;
   participantImageMap?: Map<string, string>;
   bottomSlot?: React.ReactNode;
@@ -30,6 +31,7 @@ function TournamentItemBasketCarousel({
   items = [],
   scrollToLast = false,
   previousItemCount = null,
+  highlightItemId = null,
   isAddItemBlocked = false,
   participantImageMap,
   bottomSlot,
@@ -63,7 +65,7 @@ function TournamentItemBasketCarousel({
     if (!carouselApi) return;
 
     if (items.length > prevItemCountRef.current) {
-      carouselApi.scrollTo(getBasketIndexForLastItem(items.length));
+      carouselApi.scrollTo(getBasketIndexForItem(items.length - 1));
     }
 
     prevItemCountRef.current = items.length;
@@ -76,6 +78,24 @@ function TournamentItemBasketCarousel({
     carouselApi.reInit();
     carouselApi.scrollTo(carouselApi.selectedScrollSnap(), true);
   }, [carouselApi, activeBasketCount, isCarouselEnabled]);
+
+  const highlightIndex = useMemo(
+    () =>
+      highlightItemId === null
+        ? -1
+        : items.findIndex(item => item.tournamentItemId === highlightItemId),
+    [items, highlightItemId]
+  );
+
+  const hasScrolledToHighlightRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!carouselApi || !isCarouselEnabled) return;
+    if (highlightIndex < 0 || hasScrolledToHighlightRef.current) return;
+
+    hasScrolledToHighlightRef.current = true;
+    carouselApi.scrollTo(getBasketIndexForItem(highlightIndex), true);
+  }, [carouselApi, isCarouselEnabled, highlightIndex]);
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -113,6 +133,7 @@ function TournamentItemBasketCarousel({
             isAddItemBlocked={isAddItemBlocked}
             maxHeight={basketMaxHeight}
             participantImageMap={participantImageMap}
+            highlightItemId={highlightItemId}
           />
         </div>
 
@@ -145,6 +166,7 @@ function TournamentItemBasketCarousel({
                 isAddItemBlocked={isAddItemBlocked}
                 maxHeight={basketMaxHeight}
                 participantImageMap={participantImageMap}
+                highlightItemId={highlightItemId}
               />
             </CarouselItem>
           ))}

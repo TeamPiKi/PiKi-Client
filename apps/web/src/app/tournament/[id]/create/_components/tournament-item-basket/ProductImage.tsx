@@ -11,6 +11,7 @@ type ProductImageProps = {
   src?: string;
   alt: string;
   status?: ItemStatusT;
+  className?: string;
 };
 
 const loadingFallback = (
@@ -32,12 +33,17 @@ const errorFallback = (status: ItemStatusT<'FAILED' | 'INCOMPLETE'> = 'FAILED') 
   </div>
 );
 
-function ProductImage({ src, alt, status }: ProductImageProps) {
+function ProductImage({ src, alt, status, className }: ProductImageProps) {
   const isProcessing = status === ITEM_STATUS.PENDING || status === ITEM_STATUS.PROCESSING;
   const isError = status === ITEM_STATUS.FAILED || status === ITEM_STATUS.INCOMPLETE;
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[16px] border-[2px] border-white bg-gray-50 shadow-[0_0_8px_rgba(0,0,0,0.16)]">
+    <div
+      className={cn(
+        'relative h-full w-full overflow-hidden rounded-[16px] border-[2px] border-white bg-gray-50 shadow-[0_0_8px_rgba(0,0,0,0.16)]',
+        className
+      )}
+    >
       {isProcessing && loadingFallback}
       {isError && errorFallback(status)}
       {!isProcessing && !isError && src && (

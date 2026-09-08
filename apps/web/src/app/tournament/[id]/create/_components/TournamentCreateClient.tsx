@@ -6,12 +6,14 @@ import BottomCta from '@/components/bottom-cta';
 import { Dialog } from '@/components/dialog';
 import GetItemDialogContent from '@/components/get-item-dialog';
 import { ITEM_STATUS } from '@/consts/item';
-import { QUERY_ACTION } from '@/consts/queryAction';
+import { QUERY_ACTION, QUERY_PARAM } from '@/consts/queryAction';
 import { useGetMe } from '@/hooks/useGetMe';
 import { useQueryAction } from '@/hooks/useQueryAction';
+import { useQueryParamOnce } from '@/hooks/useQueryParamOnce';
 import { useSSEFallback } from '@/hooks/useSSEFallback';
 import { hasSentInvite } from '@/utils/inviteSentSession';
 import { hasParsingItems } from '@/utils/item';
+import { parseIdParam } from '@/utils/parseIdParam';
 
 import { useGetTournament } from '../../_common/_hooks/useGetTournament';
 import { PREV_ITEM_COUNT_KEY } from '../_consts/tournamentItemBasket';
@@ -55,6 +57,10 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
   });
 
   const scrollToLast = isScrollToLastQuery || isScrollToLastSession;
+
+  /** 알림에서 진입한 경우 */
+  const highlightItemIdParam = useQueryParamOnce(QUERY_PARAM.HIGHLIGHT_TOURNAMENT_ITEM);
+  const highlightItemId = highlightItemIdParam ? parseIdParam(highlightItemIdParam) : null;
 
   useEffect(() => {
     sessionStorage.removeItem(scrollToLastKey);
@@ -111,6 +117,10 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
   const participantImageMap = new Map(
     (pending?.participants ?? []).map(p => [p.userId, p.profileImage])
   );
+
+  const myNickname =
+    (pending?.participants ?? []).find(p => p.userId === userData.id)?.nickname ??
+    userData.nickname;
 
   const isParticipant = !tournamentData.isOwner;
   // 참여자는 주최자가 ROOT 를 시작한 후(ownerStarted=true) 부터 본인 CLONE 시작 가능.
@@ -210,6 +220,7 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
           items={pending?.items}
           scrollToLast={scrollToLast}
           previousItemCount={previousItemCount}
+          highlightItemId={highlightItemId}
           isAddItemBlocked={isAddItemBlocked}
           participantImageMap={participantImageMap}
           bottomSlot={
@@ -271,7 +282,7 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
           userIdentityType={userData.identityType}
           open={isWelcomeOpen}
           onOpenChange={setIsWelcomeOpen}
-          nickname={userData.nickname}
+          nickname={myNickname}
           profileImage={userData.profileImage}
           tournamentName={tournamentData.name}
           itemCount={pending?.items.length ?? 0}

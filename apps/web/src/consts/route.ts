@@ -1,3 +1,5 @@
+import { QUERY_PARAM } from './queryAction';
+
 /** NOTE: 수정 시 src/utils/getRouteType.ts 도 함께 수정 필요 */
 export const ROUTES = {
   /** 1. Public (Anonymous) */
@@ -26,7 +28,10 @@ export const ROUTES = {
   MYPAGE_WITHDRAW: '/mypage/withdraw',
 
   /** 4. Authorized Guest or Member */
-  TOURNAMENT_CREATE: (tournamentId: number) => `/tournament/${tournamentId}/create`,
+  TOURNAMENT_CREATE: (tournamentId: number, highlightItemId?: number) =>
+    Number.isSafeInteger(highlightItemId) && Number(highlightItemId) > 0
+      ? `/tournament/${tournamentId}/create?${QUERY_PARAM.HIGHLIGHT_TOURNAMENT_ITEM}=${highlightItemId}`
+      : `/tournament/${tournamentId}/create`,
   TOURNAMENT_ADD_ITEM_BY_WISH: (tournamentId: number) =>
     `/tournament/${tournamentId}/create/by-wish`,
   TOURNAMENT_ITEM_EDIT: (tournamentId: number, itemId: number) =>
