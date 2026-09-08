@@ -1,0 +1,195 @@
+# 앱 승격 — apps/app/app.json 의 버전을 올려 EAS 빌드 3건(production iOS·Android, production-dev iOS)을
+# 트리거하고, 트리거가 다 성공한 뒤에 버전 커밋과 app-v* 태그를 dev 에 올린다.
+# 빌드 진행·완료·실패는 apps/hooks 웹훅이 Discord 스레드로 보고하므로 --no-wait 로 러너를 붙잡지 않는다.
+# 실행: Actions → App Promote → Run workflow (bump 선택 또는 version 직접 입력)
+#
+# 순서가 계약이다: 빌드 트리거가 먼저다. --no-wait 의 성공은 "큐에 들어갔다"(인증·설정·업로드 통과)까지고
+# 컴파일 성공은 아니지만, 그 구간에서 실패하면 아무 빌드도 안 돈 상태라 git 이 깨끗해야 재실행이 된다.
+# 컴파일 실패는 버전을 올리지 않는다 — 목표 버전은 그대로고 빌드 번호만 다시 올라간다.
+# 그 재시도는 skip_bump 로 하고, 이때 태그는 실제로 빌드된 커밋으로 옮긴다.
+#
+# 전제:
+# - secrets.EXPO_TOKEN — EAS robot token
+# - EAS 에 App Store Connect API Key 가 등록돼 있어야 --auto-submit 이 비대화형으로 통과한다
+#   (expo.dev → Project → Credentials 에서 확인. 로컬 `eas credentials` 는 GoogleService-Info.plist
+#    가 EAS 파일 시크릿에만 있어 app config introspect 단계에서 실패한다)
+# - 네이티브 설정 파일(GoogleService-Info.plist·google-services.json)은 EAS 파일 시크릿에 있어
+#   러너 체크아웃에 없어도 무방하다 — 빌드는 EAS 서버에서 돌며 거기서 주입된다
+name: App Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: '버전 증가 단위'
+        type: choice
+        options:
+          - minor
+          - patch
+          - major
+        default: minor
+      version:
+        description: '버전 직접 지정 (예: 1.3.0) — 입력 시 bump 무시'
+        required: false
+      skip_bump:
+        description: '버전 범프 없이 재빌드 — 태그를 지금 커밋으로 옮긴다 (빌드 실패 재시도용)'
+        type: boolean
+        default: false
+
+permissions: {}
+
+# 승격 동시 실행 방지 — 버전 계산과 푸시 사이의 레이스를 차단한다.
+concurrency:
+  group: app-promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # 어느 ref 에서 dispatch 하든 승격 대상은 항상 dev
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: 버전 계산
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          INPUT_VERSION: ${{ inputs.version }}
+          SKIP_BUMP: ${{ inputs.skip_bump }}
+        run: |
+          set -euo pipefail
+          # app.json 은 주석이 섞인 JSONC 라 jq 로 파싱할 수 없다 — version 줄만 정규식으로 다룬다
+          CURRENT=$(sed -n 's/.*"version": "\([0-9][0-9.]*\)".*/\1/p' apps/app/app.json | head -1)
+          if [ -z "$CURRENT" ]; then
+            echo "::error::apps/app/app.json 에서 version 을 읽지 못했습니다"
+            exit 1
+          fi
+
+          if [ "$SKIP_BUMP" = "true" ]; then
+            echo "bump=false" >> "$GITHUB_OUTPUT"
+            echo "next=$CURRENT" >> "$GITHUB_OUTPUT"
+            echo "### 앱 재빌드 v$CURRENT (버전 범프 없음)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ -n "$INPUT_VERSION" ]; then
+            if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::version 형식이 올바르지 않습니다: $INPUT_VERSION"
+              exit 1
+            fi
+            NEXT="$INPUT_VERSION"
+          else
+            IFS=. read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            case "$BUMP" in
+              major) NEXT="$((MAJOR + 1)).0.0" ;;
+              minor) NEXT="$MAJOR.$((MINOR + 1)).0" ;;
+              patch) NEXT="$MAJOR.$MINOR.$((PATCH + 1))" ;;
+              *) echo "::error::알 수 없는 bump: $BUMP"; exit 1 ;;
+            esac
+          fi
+
+          # 빌드를 돌리기 전에 막는다 — 태그가 겹치면 승격 자체가 성립하지 않는다
+          if git rev-parse -q --verify "refs/tags/app-v$NEXT" >/dev/null; then
+            echo "::error::태그 app-v$NEXT 가 이미 있습니다 (재빌드라면 skip_bump 를 켜세요)"
+            exit 1
+          fi
+
+          echo "bump=true" >> "$GITHUB_OUTPUT"
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "### 앱 승격 v$CURRENT → v$NEXT" >> "$GITHUB_STEP_SUMMARY"
+
+      # 빌드가 러너의 워킹 트리를 올리므로, 커밋 전이라도 여기서 바꾼 버전이 빌드에 들어간다
+      - name: app.json 버전 갱신
+        if: steps.version.outputs.bump == 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+        run: |
+          set -euo pipefail
+          # 0,/re/ 는 첫 일치만 바꾼다 — 뒤쪽 url·extraMavenRepos 줄을 건드리지 않는다
+          sed -i "0,/\"version\": \"[0-9][0-9.]*\"/s//\"version\": \"$NEXT\"/" apps/app/app.json
+          git diff --quiet apps/app/app.json && { echo "::error::버전이 갱신되지 않았습니다"; exit 1; }
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # iOS 2건만 --auto-submit — Android 는 Play 제출이 수동이라 빌드까지만 돌린다
+      # (--platform all 로 묶으면 Android 까지 Play 에 올리려 해서 submit 설정이 없어 실패한다)
+      - name: EAS 빌드 트리거 (production)
+        working-directory: apps/app
+        run: |
+          set -euo pipefail
+          eas build --profile production --platform ios --auto-submit --non-interactive --no-wait
+          eas build --profile production --platform android --non-interactive --no-wait
+
+      - name: EAS 빌드 트리거 (production-dev)
+        working-directory: apps/app
+        run: eas build --profile production-dev --platform ios --auto-submit --non-interactive --no-wait
+
+      # 트리거가 다 통과한 뒤에 기록을 남긴다.
+      # 태그는 BRIDGE_GATE 의 minAppVersion 판단 근거이므로 (`git tag --contains <sha>`)
+      # 반드시 "실제로 빌드된 커밋"을 가리켜야 한다. 재빌드면 태그를 그 커밋으로 옮긴다 —
+      # 옛 커밋에 남아 있으면 그 사이 들어간 브릿지 핸들러가 미포함으로 판정돼 게이트가 잘못 막는다.
+      # dev 는 PR 필수 보호가 걸려 있어 이 푸시가 거부될 수 있다 (봇은 admin 이 아니라 우회 못 한다).
+      # 그때는 빌드가 이미 도는 중이니 아래를 로컬에서 직접 밀면 된다 — admin 은 통과한다.
+      #   git commit -am "chore: 앱 버전 v{버전}" && git tag app-v{버전} && git push origin dev --follow-tags
+      - name: 버전 커밋·태그 푸시
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+          BUMPED: ${{ steps.version.outputs.bump }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          if [ "$BUMPED" = "true" ]; then
+            git add apps/app/app.json
+            git commit -m "chore: 앱 버전 v$NEXT"
+            git tag "app-v$NEXT"
+            git push origin dev
+            git push origin "app-v$NEXT"
+            exit 0
+          fi
+
+          # 재빌드 — 새 커밋은 만들지 않고 태그만 지금 빌드한 커밋으로 옮긴다
+          TAG="app-v$NEXT"
+          if [ "$(git rev-parse -q --verify "refs/tags/$TAG" || true)" = "$(git rev-parse HEAD)" ]; then
+            echo "태그 $TAG 가 이미 이 커밋을 가리킵니다 — 그대로 둡니다"
+            exit 0
+          fi
+          git tag -f "$TAG"
+          git push -f origin "refs/tags/$TAG"
+          echo "태그 $TAG 를 $(git rev-parse --short HEAD) 로 옮겼습니다"
+
+      - name: 요약
+        if: always()
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+          BUMPED: ${{ steps.version.outputs.bump }}
+        run: |
+          {
+            echo "빌드 3건을 트리거했습니다. 진행 상황은 Discord 배포알림 스레드에서 확인하세요."
+            echo ""
+            if [ "$BUMPED" = "true" ]; then
+              echo "- 태그: \`app-v$NEXT\`"
+            else
+              echo "- 버전 범프 없이 v$NEXT 로 재빌드 — 태그 \`app-v$NEXT\` 를 이 커밋으로 옮김"
+            fi
+            echo "- iOS 2건은 완료 시 ASC 업로드까지 자동, 심사 제출은 ASC 에서 사람이 누릅니다"
+            echo "- Android 는 빌드만 — 스레드에서 Play 제출 담당자를 멘션합니다"
+            echo "- 빌드 실패로 다시 돌릴 때는 \`skip_bump\` 를 켜세요 (태그가 재빌드 커밋으로 따라옵니다)"
+          } >> "$GITHUB_STEP_SUMMARY"
