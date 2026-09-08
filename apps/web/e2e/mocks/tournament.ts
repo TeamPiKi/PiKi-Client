@@ -19,8 +19,8 @@ export const MOCK_TOURNAMENT_LIST: GetTournamentListResponseT = [
     name: 'E2E 토너먼트',
     status: 'PENDING',
     createdAt: '2026-01-01T00:00:00Z',
-    /** 가짜 URL — fixture 가 가로채 로컬 이미지로 응답한다 (e2e/mocks/images.ts) */
-    participantProfileImages: [MOCK_IMAGE_URLS.avatar],
+    participantCount: 1,
+    playedCount: 0,
     thumbnailUrls: [],
   },
 ];
