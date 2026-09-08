@@ -1,0 +1,27 @@
+@keyframes tbi-highlight-border {
+  0%,
+  75% {
+    border-color: var(--color-sky-blue-200);
+  }
+  100% {
+    border-color: var(--color-base-50);
+  }
+}
+
+@keyframes tbi-highlight-ring {
+  0%,
+  75% {
+    box-shadow: 0 0 0 1.5px var(--color-sky-blue-200);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.tbi-highlight {
+  animation: tbi-highlight-border 2s ease-out forwards;
+}
+
+.tbi-highlight-ring {
+  animation: tbi-highlight-ring 2s ease-out forwards;
+}

@@ -5,15 +5,23 @@ import { useGetMe } from '@/hooks/useGetMe';
 
 import type { PendingTournamentItemT } from '../../../_common/_types/tournamentResponse';
 import ProductImage from './ProductImage';
+import './TournamentBasketItem.css';
 
 type TournamentBasketItemProps = {
   item: PendingTournamentItemT;
   index: number;
   participantImageMap?: Map<string, string>;
+  /** 알림에서 진입해 이 카드가 대상인 경우 */
+  isHighlighted?: boolean;
 };
 
 /** 바스켓 타일 — 순수 표시용. 클릭 동작은 감싸는 Link·button 이 담당한다 */
-function TournamentBasketItem({ item, index, participantImageMap }: TournamentBasketItemProps) {
+function TournamentBasketItem({
+  item,
+  index,
+  participantImageMap,
+  isHighlighted = false,
+}: TournamentBasketItemProps) {
   const { userData } = useGetMe();
   const friendImageUrl =
     item.userId && item.userId !== userData.id ? participantImageMap?.get(item.userId) : null;
@@ -25,8 +33,15 @@ function TournamentBasketItem({ item, index, participantImageMap }: TournamentBa
           {...(item.imageUrl ? { src: item.imageUrl } : {})}
           alt={`토너먼트 아이템 ${index + 1}`}
           status={item.status}
+          {...(isHighlighted && { className: 'tbi-highlight' })}
         />
       </div>
+      {isHighlighted && (
+        <span
+          aria-hidden
+          className="tbi-highlight-ring pointer-events-none absolute inset-0 rounded-2xl"
+        />
+      )}
       {friendImageUrl && (
         <div
           className="absolute -right-1 -bottom-0.5 overflow-hidden rounded-full border-2 border-white"
