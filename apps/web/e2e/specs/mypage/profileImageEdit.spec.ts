@@ -26,11 +26,20 @@ test('프로필 이미지를 고르면 크롭 에디터가 열리고, 완료하�
   /** S3 직접 PUT — 서명과 어긋나면 실서버가 거부하므로 Content-Type·바이트를 검증한다 */
   let putContentType: string | undefined;
   let putBodyPrefixHex: string | undefined;
+  let putBodyByteLength: number | undefined;
   await page.route(MOCK_UPLOAD_URL, async route => {
     putContentType = route.request().headers()['content-type'];
     putBodyPrefixHex = route.request().postDataBuffer()?.subarray(0, 3).toString('hex');
+    putBodyByteLength = route.request().postDataBuffer()?.byteLength;
     await route.fulfill({ status: 200, body: '' });
   });
+
+  /** presign 요청 body 캡처 — contentLength 는 서명에 묶이므로 PUT 본문 바이트 수와 같아야 한다 */
+  const presignRequestPromise = page.waitForRequest(
+    request =>
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === ENDPOINTS.USER_PROFILE_IMAGE_PRESIGNED
+  );
 
   await page.goto('/mypage/edit');
 
@@ -57,6 +66,10 @@ test('프로필 이미지를 고르면 크롭 에디터가 열리고, 완료하�
   expect(putContentType).toBe('image/jpeg');
   // JPEG SOI 마커 — presign contentType 과 실제 바이트가 일치해야 서버 USER-011 을 피한다
   expect(putBodyPrefixHex).toBe('ffd8ff');
+  /** 어긋나면 실서버에선 S3 403 이 일반 업로드 실패로만 보이므로, 계약 위반은 여기서 잡는다 */
+  const presignBody = (await presignRequestPromise).postDataJSON() as { contentLength?: number };
+  expect(putBodyByteLength).toBeGreaterThan(0);
+  expect(presignBody.contentLength).toBe(putBodyByteLength);
 });
 
 test.describe('마우스(fine pointer) 환경', () => {

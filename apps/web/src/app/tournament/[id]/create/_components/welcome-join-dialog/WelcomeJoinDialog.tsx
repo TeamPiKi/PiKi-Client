@@ -49,7 +49,7 @@ function WelcomeJoinDialog({
                   {nickname}
                 </DrawerTitle>
                 <DrawerDescription className="text-center body-1-medium text-text-neutral-secondary">
-                  이 프로필로 참여할게요.
+                  이 이름으로 참여할게요.
                 </DrawerDescription>
               </div>
             </div>

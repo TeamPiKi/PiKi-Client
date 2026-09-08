@@ -40,8 +40,12 @@ const requireChannelId = () => {
   return channelId;
 };
 
-/** 외부 텍스트가 섞여도 멘션이 울리지 않도록 파싱 차단 */
-const messageBody = (content: string) => JSON.stringify({ content, allowed_mentions: { parse: [] } });
+/** 외부 텍스트가 섞여도 멘션이 울리지 않도록 파싱 차단 — 지정한 유저만 예외로 허용 */
+const messageBody = (content: string, mentionUserIds?: string[]) =>
+  JSON.stringify({
+    content,
+    allowed_mentions: mentionUserIds?.length ? { parse: [], users: mentionUserIds } : { parse: [] },
+  });
 
 export const sendDiscordMessage = async (content: string) => {
   await discordRequest(`/channels/${requireChannelId()}/messages`, {
@@ -91,8 +95,16 @@ export const archiveThread = async (threadId: string) => {
   });
 };
 
-export const postThreadMessage = async (threadId: string, content: string) => {
-  await discordRequest(`/channels/${threadId}/messages`, { method: 'POST', body: messageBody(content) });
+/** 멘션은 이 경로에만 실린다 — 상태판은 수정이라 Discord 가 알림을 보내지 않는다 */
+export const postThreadMessage = async (
+  threadId: string,
+  content: string,
+  mentionUserIds?: string[]
+) => {
+  await discordRequest(`/channels/${threadId}/messages`, {
+    method: 'POST',
+    body: messageBody(content, mentionUserIds),
+  });
 };
 
 /** 링크 라벨 인젝션(](url)) 차단용 Markdown 특수문자 이스케이프 */

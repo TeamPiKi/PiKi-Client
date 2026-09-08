@@ -118,6 +118,10 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
     (pending?.participants ?? []).map(p => [p.userId, p.profileImage])
   );
 
+  const myNickname =
+    (pending?.participants ?? []).find(p => p.userId === userData.id)?.nickname ??
+    userData.nickname;
+
   const isParticipant = !tournamentData.isOwner;
   // 참여자는 주최자가 ROOT 를 시작한 후(ownerStarted=true) 부터 본인 CLONE 시작 가능.
   const isWaitingForOwnerStart = isParticipant && pending?.ownerStarted === false;
@@ -278,7 +282,7 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
           userIdentityType={userData.identityType}
           open={isWelcomeOpen}
           onOpenChange={setIsWelcomeOpen}
-          nickname={userData.nickname}
+          nickname={myNickname}
           profileImage={userData.profileImage}
           tournamentName={tournamentData.name}
           itemCount={pending?.items.length ?? 0}

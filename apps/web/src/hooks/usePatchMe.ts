@@ -17,7 +17,10 @@ export const usePatchMe = () => {
       let imageKey: string | undefined;
 
       if (image) {
-        const upload = await postProfileImagePresignedUrl({ contentType: image.type });
+        const upload = await postProfileImagePresignedUrl({
+          contentType: image.type,
+          contentLength: image.size,
+        });
         await putImageToS3(upload, image);
         imageKey = upload.imageKey;
       }

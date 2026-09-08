@@ -1,5 +1,6 @@
-import type { RootStateT } from '../../lib/release.js';
-import { updateReleaseThread } from '../../lib/release.js';
+import { listValidIosBuildNumbers } from '../../lib/asc.js';
+import type { ReleaseLineT, ReleaseUpdateT, RootStateT } from '../../lib/release.js';
+import { PROFILE_LABEL, buildOfLine, lineKey, parseLines, updateReleaseThread } from '../../lib/release.js';
 import { verifySignature } from '../../lib/verify.js';
 
 type AscWebhookPayloadT = {
@@ -17,6 +18,10 @@ type VersionStateT = {
   log: string;
   final?: { emoji: string; text: string };
 };
+
+const REVIEW_KEY = 'iOS 심사';
+const READY_TEXT = 'TestFlight 준비 완료';
+const SUBMIT_WAIT = ' — 심사 제출 대기';
 
 /** 심사 통과·출시·반려만 기록 — 수동/자동 출시는 통과 후 전이로 드러난다 */
 const VERSION_STATE: Record<string, VersionStateT> = {
@@ -44,23 +49,18 @@ const VERSION_STATE: Record<string, VersionStateT> = {
   },
 };
 
-const TESTFLIGHT_KEY = 'TestFlight 처리';
+const IOS_PROFILE_KEYS = Object.keys(PROFILE_LABEL).map(profile => lineKey('ios', profile));
+const REVIEW_PROFILE_KEY = lineKey('ios', 'production');
 
-/** 두 번째부터는 상태판 카운터만 올린다 — 어느 빌드인지 모르는 같은 줄이 반복되지 않도록 */
-const isFirstTestFlight = (lines: string[]) =>
-  !lines.some(line => line.startsWith(`• ${TESTFLIGHT_KEY}:`));
-
-/** ASC 페이로드에는 빌드 식별 정보가 없어, 상태판에 남은 이 사이클의 빌드 번호로 되짚는다 */
-const testFlightBuild = ({ title, lines }: RootStateT) => {
-  const version = /v[\d.]+/.exec(title)?.[0] ?? '';
-  const builds = [
-    ...new Set(lines.flatMap(line => (line.match(/빌드 [\d.]+/g) ?? []).map(tag => tag.slice(3)))),
-  ];
-  const buildText =
-    builds.length > 1 ? `빌드 ${builds.join('·')} 중 1건` : builds[0] && `빌드 ${builds[0]}`;
-  const detail = [version, buildText].filter(Boolean).join(' ');
-  return detail ? ` — ${detail}` : '';
-};
+/** ASC 이벤트에는 빌드 식별 정보가 없어, VALID 가 된 빌드 번호로 상태판 줄을 되짚는다 */
+const readyLines = (root: RootStateT, validBuilds: Set<string>) =>
+  parseLines(root).flatMap(line => {
+    if (!IOS_PROFILE_KEYS.includes(line.key)) return [];
+    if (line.value.includes(READY_TEXT)) return [];
+    const build = buildOfLine(line.value);
+    if (!build || !validBuilds.has(build)) return [];
+    return [{ key: line.key, build }];
+  });
 
 /** App Store Connect 웹훅 — TestFlight 빌드 처리·심사 상태 전이를 배포 스레드에 기록 */
 export async function POST(request: Request) {
@@ -87,28 +87,64 @@ export async function POST(request: Request) {
   /** 이벤트별로 attributes 키가 다르다 (build: newState, version: newValue) */
   const newState = attributes.newState ?? attributes.newValue ?? '';
 
-  let update: Parameters<typeof updateReleaseThread>[0] | null = null;
+  /** buildUploads id 로 단건 조회가 가능한지 판단하려면 실물 페이로드가 필요하다 (#625) */
+  console.warn(`ASC 웹훅 수신 ${eventType}:${newState} ${rawBody}`);
+
+  let update: ReleaseUpdateT | null = null;
   if (eventType === 'buildUploadStateUpdated') {
     if (newState === 'COMPLETE') {
-      update = {
-        log: root =>
-          isFirstTestFlight(root.lines)
-            ? `✅ TestFlight 처리 완료${testFlightBuild(root)} · 테스트 배포 가능`
-            : '',
-        line: {
-          key: TESTFLIGHT_KEY,
-          value: prev => `${(parseInt(prev ?? '', 10) || 0) + 1}건 완료`,
-        },
-      };
+      const validBuilds = await listValidIosBuildNumbers();
+      /** 조회 불가(키 없음·장애)면 어느 빌드인지 특정할 수 없어 중립 문구만 남긴다 */
+      if (!validBuilds) {
+        update = { log: '✅ TestFlight 처리 완료 — 테스트 배포 가능' };
+      } else {
+        const submitterId = process.env.DISCORD_APPSTORE_SUBMITTER_ID;
+        /** 심사용 빌드가 준비된 순간이 ASC 에서 심사 제출을 누를 시점이다 */
+        const isReviewReady = (root: RootStateT) =>
+          readyLines(root, validBuilds).some(line => line.key === REVIEW_PROFILE_KEY);
+
+        update = {
+          log: root =>
+            readyLines(root, validBuilds)
+              .map(line => {
+                const base = `✅ ${line.key} 빌드 ${line.build} ${READY_TEXT}`;
+                /** 멘션 문자열이 본문에 있어야 핑이 울린다 (allowed_mentions 만으로는 안 된다) */
+                return line.key === REVIEW_PROFILE_KEY && submitterId
+                  ? `${base} — <@${submitterId}> 심사 제출 필요`
+                  : base;
+              })
+              .join('\n'),
+          lines: root =>
+            readyLines(root, validBuilds).map(
+              (line): ReleaseLineT => ({
+                key: line.key,
+                value:
+                  line.key === REVIEW_PROFILE_KEY
+                    ? `빌드 ${line.build} ${READY_TEXT}${SUBMIT_WAIT}`
+                    : `빌드 ${line.build} ${READY_TEXT}`,
+              })
+            ),
+          mentionUserIds: root => (submitterId && isReviewReady(root) ? [submitterId] : []),
+        };
+      }
     } else if (newState === 'FAILED') {
-      update = { log: root => `❌ TestFlight 처리 실패${testFlightBuild(root)}` };
+      update = { log: '❌ TestFlight 처리 실패' };
     }
   } else if (eventType === 'appStoreVersionAppVersionStateUpdated') {
     const state = VERSION_STATE[newState];
     if (state) {
       update = {
         log: state.log,
-        line: { key: '심사', value: state.status },
+        lines: root => {
+          const reviewLine = parseLines(root).find(line => line.key === REVIEW_PROFILE_KEY);
+          return [
+            { key: REVIEW_KEY, value: state.status },
+            /** 심사가 돌기 시작했으면 제출 대기 안내는 지난 얘기다 (줄이 있을 때만 손댄다) */
+            ...(reviewLine?.value.includes(SUBMIT_WAIT)
+              ? [{ key: REVIEW_PROFILE_KEY, value: reviewLine.value.replace(SUBMIT_WAIT, '') }]
+              : []),
+          ];
+        },
         final: state.final,
       };
     }
