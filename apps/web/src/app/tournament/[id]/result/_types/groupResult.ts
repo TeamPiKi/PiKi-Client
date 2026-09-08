@@ -2,6 +2,7 @@ type GroupResultParticipantT = {
   userId: string;
   nickname: string;
   profileImage: string;
+  isHost: boolean;
 };
 
 export type GroupResultItemT = {
