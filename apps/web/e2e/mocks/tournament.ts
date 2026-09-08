@@ -87,6 +87,7 @@ export const MOCK_TOURNAMENT_PENDING: GetTournamentPendingResponseT = {
         nickname: '피키게스트',
         itemCount: 0,
         profileImage: MOCK_IMAGE_URLS.avatar,
+        isHost: true,
       },
     ],
   },

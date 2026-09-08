@@ -10,6 +10,7 @@ type TournamentParticipantT = {
   nickname: string;
   itemCount: number;
   profileImage: string;
+  isHost: boolean;
 };
 
 /** 서버가 브래킷에서 파생해 내려주는 대결 한 판 */

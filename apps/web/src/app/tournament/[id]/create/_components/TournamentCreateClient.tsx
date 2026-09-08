@@ -97,6 +97,7 @@ function TournamentCreateClient({ tournamentId }: TournamentCreateClientProps) {
       id: p.userId,
       name: p.nickname,
       imageUrl: p.profileImage,
+      isHost: p.isHost,
     },
     itemCount: p.itemCount,
   }));
