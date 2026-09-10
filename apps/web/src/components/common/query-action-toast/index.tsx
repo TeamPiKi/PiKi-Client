@@ -1,11 +1,12 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { QUERY_ACTION, type QueryActionValueT } from '@/consts/queryAction';
 import { QUERY_ACTION_TOAST } from '@/consts/queryActionToast';
+import { clearQueryParam } from '@/utils/clearQueryParam';
 
 /**
  * `?action=` 으로 넘어온 안내 토스트를 노출하고 쿼리를 URL 에서 제거한다.
@@ -15,24 +16,17 @@ import { QUERY_ACTION_TOAST } from '@/consts/queryActionToast';
  */
 function QueryActionToast() {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
 
   const action = searchParams.get(QUERY_ACTION.KEY);
   const toastEntry = action ? QUERY_ACTION_TOAST[action as QueryActionValueT] : null;
-
-  /** action 만 걷어낸다 — 도착지가 함께 실어 보낸 쿼리(redirect·필터 등)까지 지우면 안 된다 */
-  const restParams = new URLSearchParams(searchParams.toString());
-  restParams.delete(QUERY_ACTION.KEY);
-  const rest = restParams.toString();
-  const nextUrl = rest ? `${pathname}?${rest}` : pathname;
 
   useEffect(() => {
     if (!toastEntry) return;
 
     toast[toastEntry.variant](toastEntry.message);
-    router.replace(nextUrl, { scroll: false });
-  }, [toastEntry, nextUrl, router]);
+    /** action 만 걷어낸다 — 도착지가 함께 실어 보낸 쿼리(redirect·필터 등)까지 지우면 안 된다 */
+    clearQueryParam(QUERY_ACTION.KEY);
+  }, [toastEntry]);
 
   return null;
 }
