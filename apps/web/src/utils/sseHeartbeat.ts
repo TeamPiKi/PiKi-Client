@@ -23,7 +23,7 @@ export const decideHeartbeatTick = ({
   now,
 }: HeartbeatTickInputT): HeartbeatTickDecisionT => {
   if (!isVisible || !connectionId) return 'SKIP';
-  if (now - lastHeartbeatAt > SSE_HEARTBEAT_STALE_MS) return 'RECONNECT';
+  if (now - lastHeartbeatAt >= SSE_HEARTBEAT_STALE_MS) return 'RECONNECT';
 
   return 'SEND';
 };

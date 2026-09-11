@@ -17,23 +17,23 @@ describe('decideHeartbeatTick', () => {
     ).toBe('SKIP');
   });
 
-  it('서버 heartbeat 가 60초 넘게 안 오면 재연결한다', () => {
-    expect(
-      decideHeartbeatTick({
-        isVisible: true,
-        connectionId: 'c1',
-        lastHeartbeatAt: NOW - SSE_HEARTBEAT_STALE_MS - 1,
-        now: NOW,
-      })
-    ).toBe('RECONNECT');
-  });
-
-  it('정확히 60초까지는 결측으로 보지 않고 하트비트를 보낸다', () => {
+  it('서버 heartbeat 가 60초 이상 안 오면 재연결한다', () => {
     expect(
       decideHeartbeatTick({
         isVisible: true,
         connectionId: 'c1',
         lastHeartbeatAt: NOW - SSE_HEARTBEAT_STALE_MS,
+        now: NOW,
+      })
+    ).toBe('RECONNECT');
+  });
+
+  it('60초 직전까지는 결측으로 보지 않고 하트비트를 보낸다', () => {
+    expect(
+      decideHeartbeatTick({
+        isVisible: true,
+        connectionId: 'c1',
+        lastHeartbeatAt: NOW - SSE_HEARTBEAT_STALE_MS + 1,
         now: NOW,
       })
     ).toBe('SEND');
