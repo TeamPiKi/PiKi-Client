@@ -16,16 +16,16 @@ export const ROUTES = {
   HOME: '/home',
   TOURNAMENT_JOIN_BY_CODE: '/tournament/join',
   TOURNAMENT_JOIN_BY_LINK: (id: number) => `/tournament/join/${id}`,
-  NOTIFICATION: '/notification',
   MYPAGE: '/mypage',
-  MYPAGE_EDIT: '/mypage/edit',
   PLAY_FROM_LINK: (sourceTournamentId: number) => `/play/${sourceTournamentId}`,
-  TOURNAMENT_HISTORY: '/archive/tournament',
 
   /** 3. Member Only */
   WISHLIST: '/archive/wish',
   WISH_EDIT: (wishId: number) => `/archive/wish/${wishId}`,
+  NOTIFICATION: '/notification',
+  MYPAGE_EDIT: '/mypage/edit',
   MYPAGE_WITHDRAW: '/mypage/withdraw',
+  TOURNAMENT_HISTORY: '/archive/tournament',
 
   /** 4. Authorized Guest or Member */
   TOURNAMENT_CREATE: (tournamentId: number, highlightItemId?: number) =>
