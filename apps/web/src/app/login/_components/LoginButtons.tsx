@@ -15,23 +15,17 @@ import { toast } from 'sonner';
 import AppleIcon from '@/assets/icons/social/apple.svg';
 import GoogleIcon from '@/assets/icons/social/google.svg';
 import KakaoIcon from '@/assets/icons/social/kakao.svg';
-import Spinner from '@/components/spinner';
 import { QUERY_ACTION } from '@/consts/queryAction';
 import { useNativeLoginResult } from '@/hooks/useNativeLoginResult';
-import { cn } from '@/utils/cn';
 import { getApiErrorMessage } from '@/utils/getApiErrorMessage';
-import { getRouteType } from '@/utils/getRouteType';
 import {
   getLoginPath,
-  getPostLoginRedirectPath,
   isValidLoginRedirectPath,
   setLoginRedirectPath,
 } from '@/utils/loginRedirect';
-import { refreshClientToken } from '@/utils/refreshClientToken';
 import { WebBridge, isWebview } from '@/utils/webBridge';
 
 import { getAuthUrl } from '../_apis/getAuthUrl';
-import { usePostGuestLogin } from '../_hooks/usePostGuestLogin';
 import SocialLoginButton from './SocialLoginButton';
 
 type LoginButtonsProps = {
@@ -47,15 +41,9 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
   const router = useRouter();
   const validRedirect = isValidLoginRedirectPath(redirect) ? redirect : null;
 
-  /** 회원 전용 경로(위시 등)로 진입 시 게스트 로그인은 의미가 없어 미노출 */
-  const isMemberOnlyRedirect =
-    !!validRedirect && getRouteType(validRedirect.split('?')[0] ?? validRedirect) === 'MEMBER_ONLY';
-
-  const [isGuestRefreshing, setIsGuestRefreshing] = useState(false);
   const [nativePendingProvider, setNativePendingProvider] = useState<SocialProviderT | null>(null);
   const [webPendingProvider, setWebPendingProvider] = useState<SocialProviderT | null>(null);
 
-  const { postGuestLoginMutation, isPostGuestLoginPending } = usePostGuestLogin();
   const handleNativeLoginSettled = useCallback(() => setNativePendingProvider(null), []);
   useNativeLoginResult({ redirect: validRedirect, onSettled: handleNativeLoginSettled });
 
@@ -88,9 +76,8 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
     handleLoginError();
   }, [action, errorCode, validRedirect, router]);
 
-  const isGuestPending = isPostGuestLoginPending || isGuestRefreshing;
   const activePendingProvider = nativePendingProvider ?? webPendingProvider;
-  const isAnyPending = isGuestPending || activePendingProvider !== null;
+  const isAnyPending = activePendingProvider !== null;
 
   const postNativeMessage = (provider: SocialProviderT) => {
     if (!isWebview()) return false;
@@ -122,29 +109,6 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
   const handleGoogleLogin = () => handleSocialLogin('google');
   const handleAppleLogin = () => handleSocialLogin('apple');
 
-  /**
-   * 게스트 로그인
-   *
-   * - 기존 게스트 세션 재활용 시도
-   * - 재활용 불가 시 새 게스트 발급
-   */
-  const handleGuestLogin = async () => {
-    setLoginRedirectPath(validRedirect);
-
-    setIsGuestRefreshing(true);
-    try {
-      await refreshClientToken();
-      router.replace(getPostLoginRedirectPath());
-      return;
-    } catch {
-      /** 세션 재활용 불가 */
-    } finally {
-      setIsGuestRefreshing(false);
-    }
-
-    postGuestLoginMutation();
-  };
-
   return (
     <div className="flex w-full flex-col items-center gap-3">
       <SocialLoginButton
@@ -173,19 +137,6 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
         disabled={isAnyPending && activePendingProvider !== 'kakao'}
         onClick={handleKakaoLogin}
       />
-
-      <button
-        type="button"
-        disabled={isAnyPending}
-        onClick={handleGuestLogin}
-        className={cn(
-          'mt-7 flex cursor-pointer items-center gap-1.5 body-2-medium text-text-neutral-secondary underline underline-offset-2 disabled:opacity-50',
-          isMemberOnlyRedirect && 'invisible'
-        )}
-      >
-        {isGuestPending ? <Spinner size={16} /> : null}
-        비회원으로 시작하기
-      </button>
     </div>
   );
 }
