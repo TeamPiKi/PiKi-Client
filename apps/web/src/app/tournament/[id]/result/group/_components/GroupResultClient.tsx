@@ -24,6 +24,7 @@ import ReceiptDrawMachine from '../../_components/ReceiptDrawMachine';
 import { useGetGroupResult } from '../../_hooks/useGetGroupResult';
 import type { GroupResultItemT } from '../../_types/groupResult';
 import { formatDate, formatTime } from '../../_utils/formatReceipt';
+import ChooserLockOverlay from './ChooserLockOverlay';
 
 const kodeMono = Kode_Mono({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
@@ -158,7 +159,7 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
               {firstItem && (
                 <div className="flex flex-col gap-3 pb-3">
                   <PlaceLabel label="1st Place" />
-                  <GroupProductCard item={firstItem} highlight />
+                  <GroupProductCard item={firstItem} tournamentId={tournamentId} highlight />
                 </div>
               )}
 
@@ -169,7 +170,7 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
                   <ul className="flex flex-col gap-3">
                     {otherItems.map(item => (
                       <li key={`${item.rank}-${item.itemId}`}>
-                        <GroupProductCard item={item} />
+                        <GroupProductCard item={item} tournamentId={tournamentId} />
                       </li>
                     ))}
                   </ul>
@@ -202,17 +203,19 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
 
 type GroupProductCardProps = {
   item: GroupResultItemT;
+  tournamentId: number;
   /** 1위 카드에 트로피 뱃지 표시 */
   highlight?: boolean;
 };
 
 const MAX_PROFILE_STACK = 3;
 
-function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
+function GroupProductCard({ item, tournamentId, highlight = false }: GroupProductCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const count = item.chosenBy.length;
   const visibleChoosers = item.chosenBy.slice(0, MAX_PROFILE_STACK);
   const extraCount = Math.max(0, count - MAX_PROFILE_STACK);
+  const hasMaskedChooser = item.chosenBy.some(chooser => chooser.isMasked);
 
   return (
     <div className="flex flex-col gap-3 px-5">
@@ -249,10 +252,13 @@ function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
             >
               <ul className="flex items-center">
                 {visibleChoosers.map((chooser, idx) => (
-                  <li key={chooser.userId} className={cn(idx !== 0 && '-ml-1.5')}>
+                  <li
+                    key={chooser.userId ?? `masked-${idx}`}
+                    className={cn(idx !== 0 && '-ml-1.5')}
+                  >
                     <Image
                       src={chooser.profileImage}
-                      alt={chooser.nickname}
+                      alt={chooser.isMasked ? '비공개 참여자' : chooser.nickname}
                       width={20}
                       height={20}
                       className="size-5 rounded-full border border-white bg-gray-50 object-cover"
@@ -277,11 +283,15 @@ function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
         </div>
       </div>
 
-      {isExpanded && count > 0 && (
+      {isExpanded && count > 0 && hasMaskedChooser && (
+        <ChooserLockOverlay tournamentId={tournamentId} />
+      )}
+
+      {isExpanded && count > 0 && !hasMaskedChooser && (
         <ul className="flex flex-wrap gap-2">
-          {item.chosenBy.map(chooser => (
+          {item.chosenBy.map((chooser, idx) => (
             <li
-              key={chooser.userId}
+              key={chooser.userId ?? `masked-${idx}`}
               className="flex items-center gap-1.5 rounded-full border border-gray-75 bg-bg-layer-default py-1 pr-3 pl-1"
             >
               <span className="relative shrink-0">
