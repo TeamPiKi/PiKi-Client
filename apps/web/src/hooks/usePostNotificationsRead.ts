@@ -1,10 +1,9 @@
 import { WEBBRIDGE_MESSAGE_TYPE } from '@piki/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { postNotificationsRead } from '@/apis/postNotificationsRead';
 import { QUERY_KEYS } from '@/consts/queryKeys';
 import { WebBridge, isWebview } from '@/utils/webBridge';
-
-import { postNotificationsRead } from '../_apis/postNotificationsRead';
 
 export const usePostNotificationsRead = () => {
   const queryClient = useQueryClient();

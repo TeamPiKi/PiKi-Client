@@ -5,13 +5,13 @@ import { useState } from 'react';
 
 import { CheckCircledIconOutline } from '@/assets/icons';
 import Button from '@/components/button';
+import { usePostNotificationsRead } from '@/hooks/usePostNotificationsRead';
 import { cn } from '@/utils/cn';
 import { formatTimeKo } from '@/utils/formatDate';
 import { isWebview } from '@/utils/webBridge';
 
 import { useGetNotifications } from '../_hooks/useGetNotifications';
 import useIntersectionObserver from '../_hooks/useIntersectionObserver';
-import { usePostNotificationsRead } from '../_hooks/usePostNotificationsRead';
 import { usePushPermission } from '../_hooks/usePushPermission';
 import { getNotificationRoute } from '../_utils/getNotificationRoute';
 import MarkAllReadDialog from './MarkAllReadDialog';

@@ -3,8 +3,7 @@
 import { toast } from 'sonner';
 
 import ConfirmDialog from '@/components/common/confirm-dialog';
-
-import { usePostNotificationsRead } from '../_hooks/usePostNotificationsRead';
+import { usePostNotificationsRead } from '@/hooks/usePostNotificationsRead';
 
 type MarkAllReadDialogProps = {
   open: boolean;
