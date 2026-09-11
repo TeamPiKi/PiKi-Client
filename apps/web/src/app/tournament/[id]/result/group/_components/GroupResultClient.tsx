@@ -34,7 +34,7 @@ type GroupResultClientProps = {
 const SectionDivider = () => <div className="h-px w-full border-t border-dashed border-gray-100" />;
 
 const GroupResultShell = ({ onBack, children }: { onBack: () => void; children: ReactNode }) => (
-  <main className="flex min-h-dvh flex-col bg-bg-layer-basement pt-padding-top pb-8">
+  <main className="flex min-h-dvh flex-col overflow-x-hidden bg-bg-layer-basement pt-padding-top pb-8">
     <header className="relative flex h-7.5 w-full shrink-0 items-center px-5">
       <button
         type="button"
@@ -120,7 +120,7 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
 
   return (
     <GroupResultShell onBack={handleBack}>
-      <div className="mx-auto mt-5 flex w-full max-w-105 flex-1 flex-col px-5">
+      <div className="mx-auto mt-4 flex min-h-0 w-full max-w-120 flex-1 flex-col gap-3">
         <ReceiptDrawMachine>
           <div className="relative flex w-full flex-col gap-2 bg-bg-layer-default pt-6 pb-6.25 filter-[drop-shadow(0px_2px_4px_rgba(0,0,0,0.12))]">
             {/* PiKi 로고 + 헤드라인 */}
@@ -129,7 +129,7 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
               <p
                 className={cn(
                   kodeMono.className,
-                  'text-center text-[12px] leading-4 font-semibold tracking-[-0.4px] text-text-neutral-secondary'
+                  'text-center text-[12px] leading-4 font-semibold tracking-[-0.4px] text-text-neutral-tertiary'
                 )}
               >
                 FROM WISH TO PICK
@@ -139,10 +139,10 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
             <div className="flex flex-col">
               {/* 날짜 / 시간 */}
               <div className={cn(kodeMono.className, 'flex items-center justify-between px-5')}>
-                <span className="caption-1-semibold text-text-neutral-secondary">
+                <span className="caption-1-semibold text-text-neutral-tertiary">
                   {formatDate(date)}
                 </span>
-                <span className="caption-1-semibold text-text-neutral-secondary">
+                <span className="caption-1-semibold text-text-neutral-tertiary">
                   {formatTime(date)}
                 </span>
               </div>
@@ -156,7 +156,7 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
 
               {/* 1st Place — 트로피 */}
               {firstItem && (
-                <div className="flex flex-col gap-3 py-3">
+                <div className="flex flex-col gap-3 pb-3">
                   <PlaceLabel label="1st Place" />
                   <GroupProductCard item={firstItem} highlight />
                 </div>
@@ -181,7 +181,7 @@ function GroupResultClient({ tournamentId }: GroupResultClientProps) {
               <p
                 className={cn(
                   kodeMono.className,
-                  'px-5 py-2 text-center caption-1-semibold text-text-neutral-secondary'
+                  'px-5 py-2 text-center caption-1-semibold text-text-neutral-tertiary'
                 )}
               >
                 @piki.day
@@ -282,7 +282,7 @@ function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
           {item.chosenBy.map(chooser => (
             <li
               key={chooser.userId}
-              className="flex items-center gap-1.5 rounded-full bg-gray-50 py-1 pr-3 pl-1"
+              className="flex items-center gap-1.5 rounded-full border border-gray-75 bg-bg-layer-default py-1 pr-3 pl-1"
             >
               <span className="relative shrink-0">
                 <Image
@@ -294,12 +294,17 @@ function GroupProductCard({ item, highlight = false }: GroupProductCardProps) {
                   unoptimized
                 />
                 {chooser.isHost && (
-                  <span className="pointer-events-none absolute -bottom-px -right-1.5">
+                  <span className="pointer-events-none absolute -right-1.5 -bottom-px">
                     <HostBadge />
                   </span>
                 )}
               </span>
-              <span className={cn('caption-1-semibold text-text-neutral-primary', chooser.isHost && 'ml-1.5')}>
+              <span
+                className={cn(
+                  'caption-1-semibold text-text-neutral-primary',
+                  chooser.isHost && 'ml-1.5'
+                )}
+              >
                 {chooser.nickname}
               </span>
             </li>
