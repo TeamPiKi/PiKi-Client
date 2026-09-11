@@ -1,8 +1,10 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import WishLoginRequired from '@/components/common/wish-login-required';
+import LoginRequired from '@/components/common/login-required';
+import { LOGIN_REQUIRED_TITLE } from '@/components/common/login-required/loginRequired.const';
 import { QUERY_ACTION } from '@/consts/queryAction';
+import { ROUTES } from '@/consts/route';
 import { getRoleFromToken } from '@/utils/auth';
 import { getLoginPath } from '@/utils/loginRedirect';
 
@@ -22,7 +24,8 @@ async function WishArchiveLayout({ children }: WishArchiveLayoutProps) {
   if (role === null) redirect(getLoginPath(redirectPath, QUERY_ACTION.VALUE.SESSION_EXPIRED));
 
   /** 위시 페이지는 멤버가 아니면 로그인 유도 화면을 렌더 */
-  if (role !== 'MEMBER') return <WishLoginRequired />;
+  if (role !== 'MEMBER')
+    return <LoginRequired title={LOGIN_REQUIRED_TITLE.WISH} redirectPath={ROUTES.WISHLIST} />;
 
   return children;
 }
