@@ -122,7 +122,11 @@ jobs:
           set -euo pipefail
           # 0,/re/ 는 첫 일치만 바꾼다 — 뒤쪽 url·extraMavenRepos 줄을 건드리지 않는다
           sed -i "0,/\"version\": \"[0-9][0-9.]*\"/s//\"version\": \"$NEXT\"/" apps/app/app.json
-          git diff --quiet apps/app/app.json && { echo "::error::버전이 갱신되지 않았습니다"; exit 1; }
+          # git diff --quiet 는 변경 없음=0 — && 연결이면 정상 경로(변경 있음=1)가 스텝을 실패시킨다
+          if git diff --quiet apps/app/app.json; then
+            echo "::error::버전이 갱신되지 않았습니다"
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
