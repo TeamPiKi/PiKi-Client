@@ -10,6 +10,7 @@ import { ENDPOINTS } from '@/consts/api';
 import { QUERY_KEYS } from '@/consts/queryKeys';
 import { ROUTES } from '@/consts/route';
 import { CLIENT_TYPE } from '@/consts/webBridge';
+import { usePostNotificationsRead } from '@/hooks/usePostNotificationsRead';
 import type { NotificationSsePayloadT, SilentSyncSsePayloadT } from '@/types/notification';
 import { getCookie } from '@/utils/cookie';
 import { handleSessionExpired } from '@/utils/handleSessionExpired';
@@ -36,6 +37,7 @@ const buildToastMessage = (payload: NotificationSsePayloadT) =>
 export const useNotificationSSE = (enabled: boolean) => {
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const { postNotificationsReadMutation } = usePostNotificationsRead();
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY_MS);
   const abortRef = useRef<AbortController | null>(null);
   const hasConnectedRef = useRef(false);
@@ -170,6 +172,12 @@ export const useNotificationSSE = (enabled: boolean) => {
               });
               const message = buildToastMessage(payload);
 
+              const showNotificationToastAndMarkRead = (variant: 'success' | 'info' | 'error') => {
+                if (variant === 'success') toast.success(message);
+                else toast[variant](message, { duration: 5000 });
+                postNotificationsReadMutation({ ids: [payload.id] });
+              };
+
               switch (payload.type) {
                 case 'ITEM_REFRESH_COMPLETED':
                 case 'ITEM_PARSING_COMPLETED':
@@ -180,7 +188,7 @@ export const useNotificationSSE = (enabled: boolean) => {
                   } else if (payload.kind === 'WISH') {
                     invalidateWishQueries(queryClient, payload.wishId);
                   }
-                  toast.success(message);
+                  showNotificationToastAndMarkRead('success');
                   break;
                 /** 미완성·실패 모두 동일한 데이터를 갱신하고, 사용자 안내만 다르다. */
                 case 'ITEM_PARSING_INCOMPLETE':
@@ -192,15 +200,13 @@ export const useNotificationSSE = (enabled: boolean) => {
                   } else if (payload.kind === 'WISH') {
                     invalidateWishQueries(queryClient, payload.wishId);
                   }
-                  if (payload.type === 'ITEM_PARSING_INCOMPLETE') {
-                    toast.info(message, { duration: 5000 });
-                  } else {
-                    toast.error(message, { duration: 5000 });
-                  }
+                  showNotificationToastAndMarkRead(
+                    payload.type === 'ITEM_PARSING_INCOMPLETE' ? 'info' : 'error'
+                  );
                   break;
                 case 'TOURNAMENT_STARTED':
                   queryClient.invalidateQueries({ queryKey: ['tournament', payload.refId] });
-                  toast.info(message, { duration: 5000 });
+                  showNotificationToastAndMarkRead('info');
                   break;
                 case 'TOURNAMENT_JOINED':
                 case 'TOURNAMENT_ITEM_ADDED':
@@ -208,11 +214,11 @@ export const useNotificationSSE = (enabled: boolean) => {
                   queryClient.invalidateQueries({ queryKey: ['tournament', payload.refId] });
 
                   if (pathnameRef.current === ROUTES.TOURNAMENT_CREATE(payload.refId)) {
-                    toast.info(message, { duration: 5000 });
+                    showNotificationToastAndMarkRead('info');
                   }
                   break;
                 default:
-                  toast.info(message, { duration: 5000 });
+                  showNotificationToastAndMarkRead('info');
               }
             } catch {
               // malformed JSON — 무시
@@ -262,5 +268,5 @@ export const useNotificationSSE = (enabled: boolean) => {
       if (reconnectTimer) clearTimeout(reconnectTimer);
       abortRef.current?.abort();
     };
-  }, [enabled, queryClient]);
+  }, [enabled, queryClient, postNotificationsReadMutation]);
 };
