@@ -7,7 +7,6 @@ import { postWishLink } from '@/apis/postWishLink';
 import { TOAST_ACTION_DURATION_MS } from '@/components/toast/toast.const';
 import { ANALYTICS_EVENT } from '@/consts/analytics';
 import { ROUTES } from '@/consts/route';
-import type { WishEntryPointT } from '@/types/wish';
 import { logAnalyticsEvent } from '@/utils/analytics';
 import {
   getApiErrorCode,
@@ -19,14 +18,16 @@ import { getApiErrorMessage } from '@/utils/getApiErrorMessage';
 import { getLoginPath } from '@/utils/loginRedirect';
 
 type UsePostWishLinkOptionsT = {
+  /** 앱 공유 유입 여부 */
+  isExternalShare?: boolean;
   /** 4xx 문구를 그릴 곳 — 입력 폼처럼 화면 안에서 안내할 때 넘긴다. 생략하면 토스트 */
   onErrorMessage?: (message: string) => void;
 };
 
-export const usePostWishLink = (
-  entryPoint: WishEntryPointT,
-  { onErrorMessage }: UsePostWishLinkOptionsT = {}
-) => {
+export const usePostWishLink = ({
+  isExternalShare,
+  onErrorMessage,
+}: UsePostWishLinkOptionsT = {}) => {
   const showErrorMessage = onErrorMessage ?? toast.error;
 
   const router = useRouter();
@@ -38,7 +39,7 @@ export const usePostWishLink = (
     isPending: isPostWishLinkPending,
     reset: resetPostWishLinkMutation,
   } = useMutation({
-    mutationFn: (url: string) => postWishLink(url, entryPoint),
+    mutationFn: (url: string) => postWishLink(url, isExternalShare),
     onSuccess: () => {
       logAnalyticsEvent(ANALYTICS_EVENT.WISH_ADD_COMPLETE, { source: 'link' });
       queryClient.invalidateQueries({ queryKey: ['wishlists'] });

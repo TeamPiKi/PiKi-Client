@@ -1,9 +1,5 @@
-import type { WISH_ENTRY_POINT } from '@/consts/api';
-
 import type { PresignedImageRequestT, PresignedImageResponseT } from './image';
 import type { ItemT } from './item';
-
-export type WishEntryPointT = (typeof WISH_ENTRY_POINT)[keyof typeof WISH_ENTRY_POINT];
 
 export type WishT = {
   id: number;
