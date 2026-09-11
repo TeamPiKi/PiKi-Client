@@ -47,3 +47,16 @@ export const ENDPOINTS = {
   /** FCM */
   FCM_TOKENS: '/api/v1/fcm/tokens',
 } as const;
+
+/**
+ * POST /api/v1/wishlists 의 X-Client-Entry-Point 헤더 값
+ *
+ * - EXTERNAL_SHARE: 앱공유로 담기
+ * - IN_APP: 앱에서 담기
+ * - IN_WEB: 웹에서 담기
+ */
+export const WISH_ENTRY_POINT = {
+  EXTERNAL_SHARE: 'EXTERNAL_SHARE',
+  IN_APP: 'IN_APP',
+  IN_WEB: 'IN_WEB',
+} as const;

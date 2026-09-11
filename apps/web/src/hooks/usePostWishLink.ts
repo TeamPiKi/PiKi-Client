@@ -7,6 +7,7 @@ import { postWishLink } from '@/apis/postWishLink';
 import { TOAST_ACTION_DURATION_MS } from '@/components/toast/toast.const';
 import { ANALYTICS_EVENT } from '@/consts/analytics';
 import { ROUTES } from '@/consts/route';
+import type { WishEntryPointT } from '@/types/wish';
 import { logAnalyticsEvent } from '@/utils/analytics';
 import {
   getApiErrorCode,
@@ -22,7 +23,10 @@ type UsePostWishLinkOptionsT = {
   onErrorMessage?: (message: string) => void;
 };
 
-export const usePostWishLink = ({ onErrorMessage }: UsePostWishLinkOptionsT = {}) => {
+export const usePostWishLink = (
+  entryPoint: WishEntryPointT,
+  { onErrorMessage }: UsePostWishLinkOptionsT = {}
+) => {
   const showErrorMessage = onErrorMessage ?? toast.error;
 
   const router = useRouter();
@@ -34,7 +38,7 @@ export const usePostWishLink = ({ onErrorMessage }: UsePostWishLinkOptionsT = {}
     isPending: isPostWishLinkPending,
     reset: resetPostWishLinkMutation,
   } = useMutation({
-    mutationFn: (url: string) => postWishLink(url),
+    mutationFn: (url: string) => postWishLink(url, entryPoint),
     onSuccess: () => {
       logAnalyticsEvent(ANALYTICS_EVENT.WISH_ADD_COMPLETE, { source: 'link' });
       queryClient.invalidateQueries({ queryKey: ['wishlists'] });

@@ -8,11 +8,13 @@ import { LinkIconFill } from '@/assets/icons';
 import Button from '@/components/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/dialog';
 import Input from '@/components/input';
+import { WISH_ENTRY_POINT } from '@/consts/api';
 import { usePostTournamentItemLink } from '@/hooks/usePostTournamentItemLink';
 import { usePostWishLink } from '@/hooks/usePostWishLink';
 import type { ItemTypeT } from '@/types/item';
 import { getApiErrorCode } from '@/utils/apiError';
 import { URL_PATTERN, extractUrlFromText } from '@/utils/extractUrl';
+import { isWebview } from '@/utils/webBridge';
 
 type ByLinkProps = {
   type: ItemTypeT;
@@ -26,9 +28,10 @@ function ByLinkDialog({ type, open, onOpenChange }: ByLinkProps) {
   const [url, setUrl] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { postWishLinkMutation, isPostWishLinkPending } = usePostWishLink({
-    onErrorMessage: setErrorMessage,
-  });
+  const { postWishLinkMutation, isPostWishLinkPending } = usePostWishLink(
+    isWebview() ? WISH_ENTRY_POINT.IN_APP : WISH_ENTRY_POINT.IN_WEB,
+    { onErrorMessage: setErrorMessage }
+  );
   const { postTournamentItemLinkMutation, isPostTournamentItemLinkPending } =
     usePostTournamentItemLink(Number(tournamentId), { onErrorMessage: setErrorMessage });
 
