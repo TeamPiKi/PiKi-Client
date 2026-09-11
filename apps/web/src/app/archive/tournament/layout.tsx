@@ -3,18 +3,22 @@ import { LOGIN_REQUIRED_TITLE } from '@/components/common/login-required/loginRe
 import { ROUTES } from '@/consts/route';
 import { getRoleOrRedirect } from '@/utils/getRoleOrRedirect';
 
-type WishArchiveLayoutProps = {
+type TournamentArchiveLayoutProps = {
   children: React.ReactNode;
 };
 
-async function WishArchiveLayout({ children }: WishArchiveLayoutProps) {
+async function TournamentArchiveLayout({ children }: TournamentArchiveLayoutProps) {
   const role = await getRoleOrRedirect();
 
-  /** 위시 페이지는 멤버가 아니면 로그인 유도 화면을 렌더 */
   if (role !== 'MEMBER')
-    return <LoginRequired title={LOGIN_REQUIRED_TITLE.WISH} redirectPath={ROUTES.WISHLIST} />;
+    return (
+      <LoginRequired
+        title={LOGIN_REQUIRED_TITLE.TOURNAMENT_HISTORY}
+        redirectPath={ROUTES.TOURNAMENT_HISTORY}
+      />
+    );
 
   return children;
 }
 
-export default WishArchiveLayout;
+export default TournamentArchiveLayout;

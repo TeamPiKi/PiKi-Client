@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation';
 
 import { ROUTES } from '@/consts/route';
 import { TOURNAMENT_STATUS } from '@/consts/tournament';
+import { getIsGuest } from '@/utils/auth';
 import { getIsApp } from '@/utils/getIsApp';
-import { getIsGuest } from '@/utils/getIsGuest';
 import { getQueryClient } from '@/utils/queryClient';
 
 import { getTournament } from '../_common/_apis/getTournament';
