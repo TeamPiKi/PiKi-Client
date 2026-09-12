@@ -1,6 +1,6 @@
 import { Header, HeaderIcon } from '@/components/header';
 import Spacing from '@/components/spacing';
-import { getIsGuest } from '@/utils/getIsGuest';
+import { getIsGuest } from '@/utils/auth';
 
 import AccountInfoSection from './_components/AccountInfoSection';
 import AppVersionFooter from './_components/AppVersionFooter';

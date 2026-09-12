@@ -1,4 +1,6 @@
+/** NOTE: 서버 전용 모듈 — 클라이언트의 role 판정은 useGetMe 로 */
 import { decodeJwtPayload, isTokenUnexpired } from '@piki/core';
+import { cookies } from 'next/headers';
 
 import type { UserIdentityTypeT } from '@/types/user';
 
@@ -8,4 +10,9 @@ export const getRoleFromToken = (token?: string): UserIdentityTypeT | null => {
 
   const role = decodeJwtPayload(token)?.role;
   return role === 'GUEST' || role === 'MEMBER' ? role : null;
+};
+
+export const getIsGuest = async (): Promise<boolean> => {
+  const token = (await cookies()).get('access_token')?.value;
+  return getRoleFromToken(token) === 'GUEST';
 };
