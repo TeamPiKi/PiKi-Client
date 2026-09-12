@@ -43,6 +43,7 @@ export const ENDPOINTS = {
   NOTIFICATIONS_SUBSCRIBE: '/api/v1/notifications/subscribe',
   NOTIFICATIONS: '/api/v1/notifications',
   NOTIFICATIONS_READ: '/api/v1/notifications/read',
+  NOTIFICATIONS_HEARTBEAT: '/api/v1/notifications/heartbeat',
 
   /** FCM */
   FCM_TOKENS: '/api/v1/fcm/tokens',
