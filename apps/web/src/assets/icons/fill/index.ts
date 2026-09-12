@@ -143,6 +143,7 @@ export { default as TicketIconFill } from './ticket.svg';
 export { default as Timer2IconFill } from './timer-2.svg';
 export { default as TimerIconFill } from './timer.svg';
 export { default as ToolIconFill } from './tool.svg';
+export { default as TooltipTailIconFill } from './tooltip-tail.svg';
 export { default as TrashIconFill } from './trash.svg';
 export { default as TrophyIconFill } from './trophy.svg';
 export { default as TruckIconFill } from './truck.svg';

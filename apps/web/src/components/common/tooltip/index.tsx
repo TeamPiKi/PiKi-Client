@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { TooltipTailIconFill } from '@/assets/icons';
 import { cn } from '@/utils/cn';
 
 type TooltipProps = {
@@ -33,19 +34,7 @@ function Tooltip({ children, icon, className }: TooltipProps) {
         </p>
       </div>
 
-      <svg
-        aria-hidden
-        width="20.853"
-        height="8.03584"
-        viewBox="0 0 20.853 8.03584"
-        fill="none"
-        className="-mt-px shrink-0"
-      >
-        <path
-          d="M0 0C0.85272 0.262671 1.64557 0.708715 2.31948 1.31559L9.21648 7.52259C9.97748 8.20759 11.1315 8.20659 11.8925 7.52159L19.1085 1.02559C19.6196 0.56611 20.2138 0.219341 20.853 0H0Z"
-          className="fill-bg-neutral-secondary"
-        />
-      </svg>
+      <TooltipTailIconFill aria-hidden className="-mt-px shrink-0 text-bg-neutral-secondary" />
     </div>
   );
 }
