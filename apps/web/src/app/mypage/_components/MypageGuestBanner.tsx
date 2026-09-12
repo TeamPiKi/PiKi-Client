@@ -6,17 +6,21 @@ import { useEffect } from 'react';
 import BasketGuestIcon from '@/assets/images/basket-guest.svg';
 import { buttonStyles } from '@/components/button/button.style';
 import { ANALYTICS_EVENT } from '@/consts/analytics';
+import { LOGIN_SOURCE } from '@/consts/loginSource';
 import { ROUTES } from '@/consts/route';
 import { logAnalyticsEvent } from '@/utils/analytics';
+import { setLoginSource } from '@/utils/loginSource';
 import { getLoginPath } from '@/utils/loginRedirect';
 
 function MypageGuestBanner() {
   useEffect(() => {
-    logAnalyticsEvent(ANALYTICS_EVENT.GUEST_BANNER_VIEW, { location: 'mypage' });
+    logAnalyticsEvent(ANALYTICS_EVENT.GUEST_BANNER_VIEW, { location: LOGIN_SOURCE.MYPAGE });
   }, []);
 
   const handleLoginClick = () => {
-    logAnalyticsEvent(ANALYTICS_EVENT.GUEST_BANNER_CTA_CLICK, { location: 'mypage' });
+    logAnalyticsEvent(ANALYTICS_EVENT.GUEST_BANNER_CTA_CLICK, { location: LOGIN_SOURCE.MYPAGE });
+    /** 로그인·OAuth 를 거치며 location 이 사라지므로 가입 완료까지 들고 갈 유입 지점을 남긴다 */
+    setLoginSource(LOGIN_SOURCE.MYPAGE);
   };
 
   return (
