@@ -135,6 +135,7 @@ export const ERROR_MESSAGE_MAP = {
 
   /** NOTIFICATION */
   'NOTIFICATION-001': '알림을 불러오지 못했어요. 새로고침 해주세요.',
+  'NOTIFICATION-002': '알림 연결이 끊겨 다시 연결했어요.',
 } as const;
 
 /**
@@ -274,6 +275,7 @@ export const ERROR_CODE = {
 
   /** 알림 */
   NOTIFICATION_INVALID_CURSOR: 'NOTIFICATION-001',
+  NOTIFICATION_CONNECTION_NOT_FOUND: 'NOTIFICATION-002',
 } as const satisfies Record<string, keyof typeof ERROR_MESSAGE_MAP>;
 
 /**
