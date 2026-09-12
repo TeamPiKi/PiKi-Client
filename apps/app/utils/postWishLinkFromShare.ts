@@ -58,6 +58,7 @@ const postWishLink = async (productUrl: string, accessToken: string) =>
     method: 'POST',
     headers: {
       'X-Client-Type': 'app',
+      'X-Client-Entry-Point': 'EXTERNAL_SHARE',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
