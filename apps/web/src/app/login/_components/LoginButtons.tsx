@@ -27,11 +27,13 @@ import {
   isValidLoginRedirectPath,
   setLoginRedirectPath,
 } from '@/utils/loginRedirect';
+import { getRecentLoginProvider, setRecentLoginProvider } from '@/utils/recentLoginProvider';
 import { refreshClientToken } from '@/utils/refreshClientToken';
 import { WebBridge, isWebview } from '@/utils/webBridge';
 
 import { getAuthUrl } from '../_apis/getAuthUrl';
 import { usePostGuestLogin } from '../_hooks/usePostGuestLogin';
+import RecentLoginTooltip from './RecentLoginTooltip';
 import SocialLoginButton from './SocialLoginButton';
 
 type LoginButtonsProps = {
@@ -54,10 +56,22 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
   const [isGuestRefreshing, setIsGuestRefreshing] = useState(false);
   const [nativePendingProvider, setNativePendingProvider] = useState<SocialProviderT | null>(null);
   const [webPendingProvider, setWebPendingProvider] = useState<SocialProviderT | null>(null);
+  /** localStorage 는 서버에서 못 읽어 마운트 후 채운다 — 하이드레이션 불일치 방지 */
+  const [recentProvider, setRecentProvider] = useState<SocialProviderT | null>(null);
+
+  useEffect(() => setRecentProvider(getRecentLoginProvider()), []);
 
   const { postGuestLoginMutation, isPostGuestLoginPending } = usePostGuestLogin();
   const handleNativeLoginSettled = useCallback(() => setNativePendingProvider(null), []);
-  useNativeLoginResult({ redirect: validRedirect, onSettled: handleNativeLoginSettled });
+  /** 앱 성공 payload 에 provider 가 없어, 요청 시점에 눌린 버튼을 그대로 기록한다 */
+  const handleNativeLoginSuccess = useCallback(() => {
+    if (nativePendingProvider) setRecentLoginProvider(nativePendingProvider);
+  }, [nativePendingProvider]);
+  useNativeLoginResult({
+    redirect: validRedirect,
+    onSettled: handleNativeLoginSettled,
+    onSuccess: handleNativeLoginSuccess,
+  });
 
   useEffect(() => {
     const handleLoginError = () => {
@@ -145,34 +159,46 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
     postGuestLoginMutation();
   };
 
+  /** Apple 이 숨겨진 환경(Android 웹뷰)에서는 버튼이 없어 말풍선도 띄우지 않는다 */
+  const tooltipProvider = recentProvider === 'apple' && !showAppleLogin ? null : recentProvider;
+
   return (
     <div className="flex w-full flex-col items-center gap-3">
-      <SocialLoginButton
-        variant="google"
-        icon={<GoogleIcon width={20} height={20} aria-hidden />}
-        label="Google로 시작하기"
-        isLoading={activePendingProvider === 'google'}
-        disabled={isAnyPending && activePendingProvider !== 'google'}
-        onClick={handleGoogleLogin}
-      />
-      {showAppleLogin && (
+      <div className="relative w-full">
+        {tooltipProvider === 'google' && <RecentLoginTooltip />}
         <SocialLoginButton
-          variant="apple"
-          icon={<AppleIcon width={20} height={20} aria-hidden />}
-          label="Apple로 시작하기"
-          isLoading={activePendingProvider === 'apple'}
-          disabled={isAnyPending && activePendingProvider !== 'apple'}
-          onClick={handleAppleLogin}
+          variant="google"
+          icon={<GoogleIcon width={20} height={20} aria-hidden />}
+          label="Google로 시작하기"
+          isLoading={activePendingProvider === 'google'}
+          disabled={isAnyPending && activePendingProvider !== 'google'}
+          onClick={handleGoogleLogin}
         />
+      </div>
+      {showAppleLogin && (
+        <div className="relative w-full">
+          {tooltipProvider === 'apple' && <RecentLoginTooltip />}
+          <SocialLoginButton
+            variant="apple"
+            icon={<AppleIcon width={20} height={20} aria-hidden />}
+            label="Apple로 시작하기"
+            isLoading={activePendingProvider === 'apple'}
+            disabled={isAnyPending && activePendingProvider !== 'apple'}
+            onClick={handleAppleLogin}
+          />
+        </div>
       )}
-      <SocialLoginButton
-        variant="kakao"
-        icon={<KakaoIcon width={20} height={20} aria-hidden />}
-        label="카카오로 시작하기"
-        isLoading={activePendingProvider === 'kakao'}
-        disabled={isAnyPending && activePendingProvider !== 'kakao'}
-        onClick={handleKakaoLogin}
-      />
+      <div className="relative w-full">
+        {tooltipProvider === 'kakao' && <RecentLoginTooltip />}
+        <SocialLoginButton
+          variant="kakao"
+          icon={<KakaoIcon width={20} height={20} aria-hidden />}
+          label="카카오로 시작하기"
+          isLoading={activePendingProvider === 'kakao'}
+          disabled={isAnyPending && activePendingProvider !== 'kakao'}
+          onClick={handleKakaoLogin}
+        />
+      </div>
 
       <button
         type="button"

@@ -13,11 +13,14 @@ const CATALOG_MESSAGES = new Set<string>(Object.values(ERROR_MESSAGE_MAP));
 type UseNativeLoginResultOptionsT = {
   redirect?: string | null;
   onSettled?: () => void;
+  /** 로그인 성공 시에만 호출 — 앱 payload 에 provider 가 없어 요청 측이 아는 값으로 기록한다 */
+  onSuccess?: () => void;
 };
 
 export const useNativeLoginResult = ({
   redirect = null,
   onSettled,
+  onSuccess,
 }: UseNativeLoginResultOptionsT = {}) => {
   const router = useRouter();
 
@@ -28,6 +31,7 @@ export const useNativeLoginResult = ({
           const { accessToken, refreshToken } = message.payload;
           setCookie('access_token', accessToken, { minutes: 15 });
           setCookie('refresh_token', refreshToken, { days: 14 });
+          onSuccess?.();
           onSettled?.();
           /** 쿠키 세팅 후 FCM 토큰 재등록 — 로그인 전 첫 시도는 인증 없어서 실패하기 때문 */
           WebBridge.postMessage({ type: WEBBRIDGE_MESSAGE_TYPE.WEB_REQ_PUSH_PERMISSION_STATUS });
@@ -46,7 +50,7 @@ export const useNativeLoginResult = ({
           onSettled?.();
         }
       },
-      [onSettled, redirect, router]
+      [onSettled, onSuccess, redirect, router]
     )
   );
 };

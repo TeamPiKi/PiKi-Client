@@ -49,9 +49,6 @@ async function LoginPage({ searchParams }: LoginPageProps) {
 
       <div className="mt-15 flex flex-col items-center gap-6">
         <PikiLogo aria-label="PiKi" className="h-[106px] w-[146px] shrink-0 text-sky-blue-400" />
-        <p className="animate-in text-center body-1-bold whitespace-pre-line text-text-neutral-secondary duration-500 fade-in-0">
-          {'매일 쌓여만 가던\n위시리스트가 오늘의 결정으로'}
-        </p>
       </div>
 
       <div className="mt-[90px] w-full animate-in duration-500 fade-in-0">
