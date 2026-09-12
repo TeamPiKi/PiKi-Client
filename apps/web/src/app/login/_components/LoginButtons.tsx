@@ -16,8 +16,10 @@ import AppleIcon from '@/assets/icons/social/apple.svg';
 import GoogleIcon from '@/assets/icons/social/google.svg';
 import KakaoIcon from '@/assets/icons/social/kakao.svg';
 import Spinner from '@/components/spinner';
+import { ANALYTICS_EVENT } from '@/consts/analytics';
 import { QUERY_ACTION } from '@/consts/queryAction';
 import { useNativeLoginResult } from '@/hooks/useNativeLoginResult';
+import { logAnalyticsEvent } from '@/utils/analytics';
 import { cn } from '@/utils/cn';
 import { getApiErrorMessage } from '@/utils/getApiErrorMessage';
 import { getRouteType } from '@/utils/getRouteType';
@@ -27,6 +29,7 @@ import {
   isValidLoginRedirectPath,
   setLoginRedirectPath,
 } from '@/utils/loginRedirect';
+import { consumeLoginSource } from '@/utils/loginSource';
 import { getRecentLoginProvider, setRecentLoginProvider } from '@/utils/recentLoginProvider';
 import { refreshClientToken } from '@/utils/refreshClientToken';
 import { WebBridge, isWebview } from '@/utils/webBridge';
@@ -65,7 +68,15 @@ function LoginButtons({ redirect, action, errorCode, showAppleLogin }: LoginButt
   const handleNativeLoginSettled = useCallback(() => setNativePendingProvider(null), []);
   /** 앱 성공 payload 에 provider 가 없어, 요청 시점에 눌린 버튼을 그대로 기록한다 */
   const handleNativeLoginSuccess = useCallback(() => {
-    if (nativePendingProvider) setRecentLoginProvider(nativePendingProvider);
+    if (!nativePendingProvider) return;
+
+    setRecentLoginProvider(nativePendingProvider);
+    /** 웹은 OAuth 콜백에서 보내지만 앱은 콜백을 타지 않아 여기가 유일한 가입 완료 시점이다 */
+    const source = consumeLoginSource();
+    logAnalyticsEvent(ANALYTICS_EVENT.SIGN_UP_COMPLETE, {
+      provider: nativePendingProvider,
+      ...(source && { source }),
+    });
   }, [nativePendingProvider]);
   useNativeLoginResult({
     redirect: validRedirect,
