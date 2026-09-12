@@ -132,7 +132,7 @@ function InviteTournamentDialog() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <Input
               label="초대 코드"
-              placeholder="pik123"
+              placeholder="PIK123"
               value={code}
               onChange={event => handleChange(event.target.value)}
               aria-invalid={showFormatError}
