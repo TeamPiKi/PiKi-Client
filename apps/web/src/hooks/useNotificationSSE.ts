@@ -1,19 +1,22 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source';
-import { WEBBRIDGE_MESSAGE_TYPE } from '@piki/core';
+import { ERROR_CODE, WEBBRIDGE_MESSAGE_TYPE } from '@piki/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
+import { postNotificationHeartbeat } from '@/apis/postNotificationHeartbeat';
 import { ENDPOINTS } from '@/consts/api';
 import { QUERY_KEYS } from '@/consts/queryKeys';
 import { ROUTES } from '@/consts/route';
 import { CLIENT_TYPE } from '@/consts/webBridge';
 import type { NotificationSsePayloadT, SilentSyncSsePayloadT } from '@/types/notification';
+import { getApiErrorCode, getApiErrorStatus } from '@/utils/apiError';
 import { getCookie } from '@/utils/cookie';
 import { handleSessionExpired } from '@/utils/handleSessionExpired';
 import { refreshClientToken } from '@/utils/refreshClientToken';
+import { SSE_HEARTBEAT_INTERVAL_MS, decideHeartbeatTick } from '@/utils/sseHeartbeat';
 import { WebBridge, isWebview } from '@/utils/webBridge';
 
 const MAX_RETRY_DELAY_MS = 30_000;
@@ -40,6 +43,10 @@ export const useNotificationSSE = (enabled: boolean) => {
   const abortRef = useRef<AbortController | null>(null);
   const hasConnectedRef = useRef(false);
   const authFailCountRef = useRef(0);
+  // connect에서 받은 ID. 하트비트에 포함하며 재연결 시 갱신한다
+  const connectionIdRef = useRef<string | null>(null);
+  // 60초간 이벤트가 없으면 끊긴 스트림으로 보고 재연결한다
+  const lastHeartbeatAtRef = useRef(0);
 
   // 주최자 알림 토스트를 담기 화면에서만 노출하기 위해 최신 경로를 ref로 관리
   const pathnameRef = useRef(pathname);
@@ -52,13 +59,55 @@ export const useNotificationSSE = (enabled: boolean) => {
 
     let cancelled = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let isHeartbeatInFlight = false;
     // ref 는 언마운트/재로그인 후에도 남으므로, 이전 세션의 실패 횟수를 물려받지 않도록 초기화
     authFailCountRef.current = 0;
+    connectionIdRef.current = null;
 
     const scheduleReconnect = (delay: number) => {
       if (reconnectTimer) clearTimeout(reconnectTimer);
       const jitteredDelay = delay * (0.5 + Math.random() * 0.5);
       reconnectTimer = setTimeout(connect, jitteredDelay);
+    };
+
+    // heartbeat 결측·409 등 연결 종료가 확정되면 백오프 없이 즉시 재연결한다
+    const reconnectNow = () => {
+      retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
+      connect();
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+
+      const connectionId = connectionIdRef.current;
+      const decision = decideHeartbeatTick({
+        isVisible: !document.hidden,
+        connectionId,
+        lastHeartbeatAt: lastHeartbeatAtRef.current,
+        now: Date.now(),
+      });
+
+      if (decision === 'SKIP' || !connectionId) return;
+      if (decision === 'RECONNECT') {
+        reconnectNow();
+        return;
+      }
+      if (isHeartbeatInFlight) return;
+
+      isHeartbeatInFlight = true;
+      postNotificationHeartbeat(connectionId)
+        .catch(error => {
+          if (cancelled) return;
+          // 서버에 그 번호의 연결이 없음(배포로 서버가 바뀌었거나 이미 정리됨) → 즉시 재연결
+          const isConnectionGone =
+            getApiErrorStatus(error) === 409 &&
+            getApiErrorCode(error) === ERROR_CODE.NOTIFICATION_CONNECTION_NOT_FOUND;
+          // 응답 지연 중 이미 재연결됐으면 옛 번호의 409 로 새 연결을 끊지 않는다
+          if (isConnectionGone && connectionIdRef.current === connectionId) reconnectNow();
+        })
+        .finally(() => {
+          isHeartbeatInFlight = false;
+        });
     };
 
     const connect = () => {
@@ -70,6 +119,8 @@ export const useNotificationSSE = (enabled: boolean) => {
       }
       // 기존 연결 정리 — 중복 알림 방지
       abortRef.current?.abort();
+      // 다음 connect 이벤트 전까지 이전 연결 ID로 하트비트를 보내지 않는다
+      connectionIdRef.current = null;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -101,6 +152,8 @@ export const useNotificationSSE = (enabled: boolean) => {
           if (response.ok) {
             retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
             authFailCountRef.current = 0;
+            // 연결 직후 첫 heartbeat 까지 60초 유예
+            lastHeartbeatAtRef.current = Date.now();
             if (hasConnectedRef.current) {
               // 재연결 성공 — 끊긴 동안 SSE 이벤트로 놓쳤을 수 있는 도메인만 재조회
               void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.NOTIFICATION.LIST });
@@ -134,6 +187,16 @@ export const useNotificationSSE = (enabled: boolean) => {
         },
 
         onmessage: event => {
+          // 어떤 이벤트든 도착했다는 것은 스트림이 살아 있다는 뜻 — heartbeat 만 세면 알림이 잦을 때 오판한다
+          lastHeartbeatAtRef.current = Date.now();
+
+          if (event.event === 'connect') {
+            connectionIdRef.current = event.data || null;
+            return;
+          }
+
+          if (event.event === 'heartbeat') return;
+
           if (event.event === 'silent-sync') {
             try {
               const payload = JSON.parse(event.data) as SilentSyncSsePayloadT;
@@ -244,23 +307,30 @@ export const useNotificationSSE = (enabled: boolean) => {
       });
     };
 
-    // 화면 복귀 시 예약된 재연결을 즉시 실행해 알림 공백을 줄인다
+    // 화면 복귀 시 예약된 재연결은 즉시 실행하고, 없으면 하트비트로 백그라운드 중 정리된 연결(409)을 빠르게 감지한다.
     const handleVisibilityChange = () => {
-      if (document.hidden || !reconnectTimer) return;
+      if (document.hidden) return;
 
-      retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
-      connect();
+      if (reconnectTimer) {
+        reconnectNow();
+        return;
+      }
+
+      tick();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     connect();
+    const heartbeatTimer = setInterval(tick, SSE_HEARTBEAT_INTERVAL_MS);
 
     return () => {
       cancelled = true;
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(heartbeatTimer);
       if (reconnectTimer) clearTimeout(reconnectTimer);
       abortRef.current?.abort();
+      connectionIdRef.current = null;
     };
   }, [enabled, queryClient]);
 };
