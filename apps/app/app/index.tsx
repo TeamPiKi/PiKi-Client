@@ -205,6 +205,8 @@ function Page() {
         allowsBackForwardNavigationGestures
         setBuiltInZoomControls={false}
         cacheEnabled
+        /** Android 기본값 false — 켜지 않으면 웹의 localStorage 가 동작하지 않는다 (온보딩 스킵·최근 로그인 힌트) */
+        domStorageEnabled
         sharedCookiesEnabled
         webviewDebuggingEnabled={__DEV__}
         startInLoadingState

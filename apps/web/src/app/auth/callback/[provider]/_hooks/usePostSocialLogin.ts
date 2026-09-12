@@ -10,6 +10,7 @@ import type { ApiErrorResponseT } from '@/types/api';
 import { logAnalyticsEvent } from '@/utils/analytics';
 import { isServerOrNetworkError, isWithdrawnAccountError } from '@/utils/apiError';
 import { getLoginPath, getLoginRedirectPath } from '@/utils/loginRedirect';
+import { setRecentLoginProvider } from '@/utils/recentLoginProvider';
 
 import { postSocialLogin } from '../_apis/postSocialLogin';
 
@@ -31,6 +32,7 @@ export const usePostSocialLogin = (provider: SocialProviderT) => {
     }) => postSocialLogin(provider, { code, redirectUri, state }),
     onSuccess: (_, variables) => {
       logAnalyticsEvent(ANALYTICS_EVENT.SIGN_UP_COMPLETE, { provider });
+      setRecentLoginProvider(provider);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.ME });
       window.location.replace(getLoginRedirectPath(variables.redirect));
     },
