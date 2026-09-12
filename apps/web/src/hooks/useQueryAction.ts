@@ -1,17 +1,16 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { QUERY_ACTION, type QueryActionValueT } from '@/consts/queryAction';
+import { clearQueryParam } from '@/utils/clearQueryParam';
 
 type UseQueryActionOptions = {
   /** `action` 쿼리 값 (예: `get-item`) */
   action: QueryActionValueT;
   /** 쿼리 키. 기본값 `action` */
   paramKey?: string;
-  /** 실행 후 이동할 경로. 미지정 시 현재 pathname */
-  clearPath?: string;
 };
 
 type UseQueryActionReturn = {
@@ -28,19 +27,16 @@ type UseQueryActionReturn = {
 export const useQueryAction = ({
   action,
   paramKey = QUERY_ACTION.KEY,
-  clearPath,
 }: UseQueryActionOptions): UseQueryActionReturn => {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
 
   const [isActive, setIsActive] = useState(() => searchParams.get(paramKey) === action);
 
   useEffect(() => {
     if (searchParams.get(paramKey) !== action) return;
 
-    router.replace(clearPath ?? pathname, { scroll: false });
-  }, [searchParams, paramKey, action, clearPath, pathname, router]);
+    clearQueryParam(paramKey);
+  }, [searchParams, paramKey, action]);
 
   return { isActive, setIsActive };
 };

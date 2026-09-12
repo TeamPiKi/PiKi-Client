@@ -11,7 +11,7 @@ import type { UserT } from '@/components/user-profile-group/userProfile.types';
 import { useGetMe } from '@/hooks/useGetMe';
 
 type FriendListItemT = {
-  userId: string;
+  key: string;
   nickname: string;
   profileImage: string;
   /** 본인 여부 — true 면 우측에 "나" 배지 표시 */
@@ -26,7 +26,7 @@ type FriendListDialogProps = {
 };
 
 const toUser = (friend: FriendListItemT): UserT => ({
-  id: friend.userId,
+  id: friend.key,
   name: friend.nickname,
   imageUrl: friend.profileImage,
 });
@@ -41,19 +41,21 @@ function FriendListDialog({ open, onOpenChange, tournamentId }: FriendListDialog
   const myUserId = userData.id;
 
   // group-result 의 모든 chosenBy 를 합쳐 userId 기준 dedup.
+  // 마스킹 참여자(게스트 조회)는 userId 가 null 이라 아이템·순서 기반 합성 키로 각각 별도 행으로 남긴다.
   const friends = useMemo<FriendListItemT[]>(() => {
     if (!groupResultData) return [];
     const map = new Map<string, FriendListItemT>();
     for (const item of groupResultData.items) {
-      for (const participant of item.chosenBy) {
-        if (map.has(participant.userId)) continue;
-        map.set(participant.userId, {
-          userId: participant.userId,
+      item.chosenBy.forEach((participant, index) => {
+        const key = participant.userId ?? `masked-${item.itemId}-${index}`;
+        if (map.has(key)) return;
+        map.set(key, {
+          key,
           nickname: participant.nickname,
           profileImage: participant.profileImage,
           isMe: participant.userId === myUserId,
         });
-      }
+      });
     }
     // 본인 먼저 노출.
     return Array.from(map.values()).sort(
@@ -117,7 +119,7 @@ function FriendListBody({ isPending, isError, friends }: FriendListBodyProps) {
   return (
     <ul className="hide-scrollbar flex max-h-100 flex-col gap-2 overflow-y-auto">
       {friends.map(friend => (
-        <li key={friend.userId}>
+        <li key={friend.key}>
           <FriendRow friend={friend} />
         </li>
       ))}
