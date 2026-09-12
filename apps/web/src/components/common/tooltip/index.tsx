@@ -20,18 +20,32 @@ function Tooltip({ children, icon, className }: TooltipProps) {
         className
       )}
     >
-      <div className="flex min-h-9 items-center justify-center gap-1 rounded-xl bg-bg-neutral-secondary px-3 py-1.5">
+      <div
+        className={cn(
+          'flex min-h-9 items-center justify-center rounded-xl bg-bg-neutral-secondary px-3 py-1.5',
+          /** 간격은 아이콘 변형에만 — 텍스트 전용은 자식이 하나라 DS 에도 gap 이 없다 */
+          icon && 'gap-1'
+        )}
+      >
         {icon}
-        <p className="max-w-[247px] whitespace-nowrap caption-1-regular text-text-neutral-inverse">
+        <p className="max-w-61.75 caption-1-regular whitespace-nowrap text-text-neutral-inverse">
           {children}
         </p>
       </div>
 
-      {/* 아래를 가리키는 꼬리 — 회전 사각형으로는 시안의 납작한 비율이 안 나온다 */}
-      <div
+      <svg
         aria-hidden
-        className="h-2 w-5.25 bg-bg-neutral-secondary [clip-path:polygon(0_0,100%_0,50%_100%)]"
-      />
+        width="20.853"
+        height="8.03584"
+        viewBox="0 0 20.853 8.03584"
+        fill="none"
+        className="-mt-px shrink-0"
+      >
+        <path
+          d="M0 0C0.85272 0.262671 1.64557 0.708715 2.31948 1.31559L9.21648 7.52259C9.97748 8.20759 11.1315 8.20659 11.8925 7.52159L19.1085 1.02559C19.6196 0.56611 20.2138 0.219341 20.853 0H0Z"
+          className="fill-bg-neutral-secondary"
+        />
+      </svg>
     </div>
   );
 }
