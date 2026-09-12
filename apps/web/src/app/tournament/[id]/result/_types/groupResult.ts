@@ -1,9 +1,13 @@
-type GroupResultParticipantT = {
-  userId: string;
+type GroupResultParticipantBaseT = {
   nickname: string;
   profileImage: string;
+  isWithdrawn: boolean;
   isHost: boolean;
 };
+
+export type GroupResultParticipantT =
+  | (GroupResultParticipantBaseT & { isMasked: false; userId: string })
+  | (GroupResultParticipantBaseT & { isMasked: true; userId: null });
 
 export type GroupResultItemT = {
   rank: number;

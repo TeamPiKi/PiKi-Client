@@ -32,7 +32,7 @@ export const useShareIntentWish = () => {
   /** 같은 URL의 중복 전달만 방지 — 후속 공유는 계속 처리돼야 한다 */
   const processedUrlsRef = useRef(new Set<string>());
 
-  const { postWishLinkMutation } = usePostWishLink();
+  const { postWishLinkMutation } = usePostWishLink({ isExternalShare: true });
 
   const handleShareIntent = useCallback(
     (payload: ShareIntentPayloadT) => {
